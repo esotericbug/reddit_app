@@ -44,10 +44,12 @@ class _ListingScreenState extends State<ListingScreen> {
                     context.read<ListingScreenCubit>().updateScrollPosition(scollController.position.pixels);
                     await scollController.animateTo(0,
                         duration: const Duration(milliseconds: 1000), curve: Curves.ease);
+                    if (!mounted) return;
                     await showSnackBar(
                       value: const Text('Go back ?'),
                       action: SnackBarAction(
                         label: 'Ok',
+                        textColor: Theme.of(context).primaryColorDark,
                         onPressed: () async {
                           await scollController.animateTo(context.read<ListingScreenCubit>().state.scrollPosition,
                               duration: const Duration(milliseconds: 1000), curve: Curves.ease);
