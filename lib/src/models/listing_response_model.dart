@@ -956,7 +956,7 @@ class Preview {
     this.enabled,
   });
 
-  List<Image>? images;
+  List<RedditImage>? images;
   bool? enabled;
 
   factory Preview.fromJson(String str) => Preview.fromMap(json.decode(str));
@@ -964,7 +964,8 @@ class Preview {
   String toJson() => json.encode(toMap());
 
   factory Preview.fromMap(Map<String, dynamic> json) => Preview(
-        images: json["images"] == null ? null : List<Image>.from(json["images"].map((x) => Image.fromMap(x))),
+        images:
+            json["images"] == null ? null : List<RedditImage>.from(json["images"].map((x) => RedditImage.fromMap(x))),
         enabled: json["enabled"],
       );
 
@@ -974,8 +975,8 @@ class Preview {
       };
 }
 
-class Image {
-  Image({
+class RedditImage {
+  RedditImage({
     this.source,
     this.resolutions,
     this.variants,
@@ -987,11 +988,11 @@ class Image {
   Variants? variants;
   String? id;
 
-  factory Image.fromJson(String str) => Image.fromMap(json.decode(str));
+  factory RedditImage.fromJson(String str) => RedditImage.fromMap(json.decode(str));
 
   String toJson() => json.encode(toMap());
 
-  factory Image.fromMap(Map<String, dynamic> json) => Image(
+  factory RedditImage.fromMap(Map<String, dynamic> json) => RedditImage(
         source: json["source"] == null ? null : ResizedIcon.fromMap(json["source"]),
         resolutions: json["resolutions"] == null
             ? null

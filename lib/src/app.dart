@@ -47,8 +47,16 @@ class _AppState extends State<App> with WidgetsBindingObserver {
           builder: (context, themeState) {
             return MaterialApp(
               debugShowCheckedModeBanner: false,
-              theme: FlexThemeData.light(colorScheme: lightDynamic, useMaterial3: true, lightIsWhite: true),
-              darkTheme: FlexThemeData.dark(colorScheme: darkDynamic, useMaterial3: true, darkIsTrueBlack: true),
+              theme: FlexThemeData.light(
+                colorScheme: lightDynamic,
+                useMaterial3: true,
+                lightIsWhite: true,
+              ),
+              darkTheme: FlexThemeData.dark(
+                colorScheme: darkDynamic,
+                useMaterial3: true,
+                darkIsTrueBlack: true,
+              ),
               themeMode: themeState.selectedTheme,
               initialRoute: ListingScreen.routeName,
               builder: (context, child) => child ?? const SizedBox(),
