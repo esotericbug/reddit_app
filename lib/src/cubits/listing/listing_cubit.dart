@@ -37,9 +37,7 @@ class ListingCubit extends Cubit<ListingState> {
 
   Future<void> fetchMore({String subreddit = 'popular'}) async {
     try {
-      // if(state.pages?.last == state.after){
-
-      // }
+      emit(state.copyWith(isFetching: true));
       final rawResponse =
           await http().get('/r/$subreddit.json', queryParameters: {'count': 25, 'after': state.pages?.last});
 
@@ -49,7 +47,7 @@ class ListingCubit extends Cubit<ListingState> {
         error: null,
         isFetching: false,
         subreddit: subreddit,
-        pages: [response.data?.after],
+        pages: [...?(state.pages), response.data?.after],
       ));
     } on DioError catch (e) {
       final errorResponse = ErrorResponse.fromJson(e.response?.data);

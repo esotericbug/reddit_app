@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:reddit_app/src/cubits/theme/theme_cubit.dart';
+import 'package:reddit_app/src/helpers/general.dart';
 import 'package:reddit_app/src/routes/routes.dart';
 import 'package:reddit_app/src/screens/listing_screen.dart';
 
@@ -57,6 +58,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
                 useMaterial3: true,
                 darkIsTrueBlack: true,
               ),
+              scaffoldMessengerKey: snackbarKey,
               themeMode: themeState.selectedTheme,
               initialRoute: ListingScreen.routeName,
               builder: (context, child) => child ?? const SizedBox(),

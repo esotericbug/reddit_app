@@ -254,7 +254,7 @@ class LinkData {
   bool? isCreatedFromAdsUi;
   bool? authorPremium;
   String? thumbnail;
-  bool? edited;
+  dynamic edited;
   dynamic authorFlairCssClass;
   List<dynamic>? authorFlairRichtext;
   Gildings? gildings;
