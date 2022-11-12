@@ -10,11 +10,12 @@ part 'listing_state.dart';
 class ListingCubit extends Cubit<ListingState> {
   ListingCubit() : super(const ListingState());
 
-  Future<void> fetchInitial({String subreddit = 'popular'}) async {
+  Future<void> fetchInitial({String? subreddit}) async {
     try {
       final rawResponse = await http().get('/r/$subreddit.json', queryParameters: {'count': 25});
 
       final response = ListingResponse.fromJson(rawResponse.data);
+      if (isClosed) return;
       emit(state.copyWith(
         children: response.data?.children,
         error: null,
@@ -26,6 +27,7 @@ class ListingCubit extends Cubit<ListingState> {
       ));
     } on DioError catch (e) {
       final errorResponse = ErrorResponse.fromJson(e.response?.data);
+      if (isClosed) return;
       emit(state.copyWith(
         children: null,
         error: errorResponse,
@@ -35,13 +37,15 @@ class ListingCubit extends Cubit<ListingState> {
     }
   }
 
-  Future<void> fetchMore({String subreddit = 'popular'}) async {
+  Future<void> fetchMore({String? subreddit}) async {
     try {
+      if (isClosed) return;
       emit(state.copyWith(isFetching: true));
       final rawResponse =
           await http().get('/r/$subreddit.json', queryParameters: {'count': 25, 'after': state.pages?.last});
 
       final response = ListingResponse.fromJson(rawResponse.data);
+      if (isClosed) return;
       emit(state.copyWith(
         children: [...?(state.children), ...(response.data?.children ?? [])],
         error: null,
@@ -51,6 +55,7 @@ class ListingCubit extends Cubit<ListingState> {
       ));
     } on DioError catch (e) {
       final errorResponse = ErrorResponse.fromJson(e.response?.data);
+      if (isClosed) return;
       emit(state.copyWith(
         children: null,
         error: errorResponse,

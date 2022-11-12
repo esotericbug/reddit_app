@@ -1,7 +1,7 @@
 import 'dart:developer' as dev;
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-// import 'package:html/parser.dart' as htmlparser;
+import 'package:html/parser.dart' as htmlparser;
 
 final GlobalKey<ScaffoldMessengerState> snackbarKey = GlobalKey<ScaffoldMessengerState>();
 
@@ -30,7 +30,7 @@ String sanitize(String s) => s.replaceAllMapped(
       (Match m) => String.fromCharCode(int.parse(m.group(1)!, radix: 16)),
     );
 
-// String parseHTMLToString(String? value) => '${htmlparser.parse(value).documentElement?.outerHtml}';
+String parseHTMLToString(String? value) => '${htmlparser.parse(value).documentElement?.text}';
 
 MarkdownStyleSheet markdownDefaultTheme(BuildContext context) => MarkdownStyleSheet.fromTheme(
       Theme.of(context),

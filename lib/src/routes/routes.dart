@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:reddit_app/src/cubits/listing/listing_cubit.dart';
 import 'package:reddit_app/src/cubits/listing_screen/listing_screen_cubit.dart';
+import 'package:reddit_app/src/cubits/overlapping_panels/overlapping_panels_cubit.dart';
 import 'package:reddit_app/src/screens/listing_screen.dart';
 import 'package:reddit_app/src/screens/settings_view.dart';
 
@@ -17,17 +18,29 @@ class RouteGenerator {
             case SettingsView.routeName:
               return const SettingsView();
             case ListingScreen.routeName:
-              return MultiBlocProvider(
-                providers: [
-                  BlocProvider(
-                    create: (context) => ListingCubit(),
-                  ),
-                  BlocProvider(
-                    create: (context) => ListingScreenCubit(),
-                  ),
-                ],
-                child: const ListingScreen(),
-              );
+              {
+                return MultiBlocProvider(
+                  providers: [
+                    BlocProvider(
+                      create: (context) => ListingCubit(),
+                    ),
+                    BlocProvider(
+                      create: (context) => ListingScreenCubit(),
+                    ),
+                    BlocProvider(
+                      create: (context) => OverlappingPanelsCubit(),
+                    ),
+                  ],
+                  child: Builder(builder: (context) {
+                    final arguments = routeSettings.arguments;
+                    if (arguments != null) {
+                      final args = arguments as Map<String, dynamic>;
+                      return ListingScreen(subreddit: args['subreddit']);
+                    }
+                    return const ListingScreen();
+                  }),
+                );
+              }
             default:
               return const ErrorRoute();
           }
