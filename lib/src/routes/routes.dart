@@ -4,6 +4,7 @@ import 'package:page_transition/page_transition.dart';
 import 'package:reddit_app/src/cubits/listing/listing_cubit.dart';
 import 'package:reddit_app/src/cubits/listing_screen/listing_screen_cubit.dart';
 import 'package:reddit_app/src/cubits/overlapping_panels/overlapping_panels_cubit.dart';
+import 'package:reddit_app/src/screens/link_detail_screen.dart';
 import 'package:reddit_app/src/screens/listing_screen.dart';
 import 'package:reddit_app/src/screens/settings_view.dart';
 
@@ -40,6 +41,10 @@ class RouteGenerator {
                     return const ListingScreen();
                   }),
                 );
+              }
+            case LinkDetailScreen.routeName:
+              {
+                return const LinkDetailScreen();
               }
             default:
               return const ErrorRoute();

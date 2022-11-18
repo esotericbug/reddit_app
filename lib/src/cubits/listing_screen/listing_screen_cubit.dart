@@ -26,4 +26,9 @@ class ListingScreenCubit extends Cubit<ListingScreenState> {
     if (isClosed) return;
     emit(state.copyWith(lastScrollDirection: value));
   }
+
+  void updateOpacity(double value) {
+    if (isClosed) return;
+    emit(state.copyWith(opacity: value));
+  }
 }

@@ -4,18 +4,21 @@ part of 'overlapping_panels_cubit.dart';
 class OverlappingPanelsCubitState extends Equatable {
   final double translate;
   final DragDirection direction;
-  const OverlappingPanelsCubitState({this.translate = 0, this.direction = DragDirection.none});
+  final bool isDragging;
+  const OverlappingPanelsCubitState({this.translate = 0, this.direction = DragDirection.left, this.isDragging = false});
 
   @override
-  List<Object> get props => [translate, direction];
+  List<Object> get props => [translate, direction, isDragging];
 
   OverlappingPanelsCubitState copyWith({
     double? translate,
     DragDirection? direction,
+    bool? isDragging,
   }) {
     return OverlappingPanelsCubitState(
       translate: translate ?? this.translate,
       direction: direction ?? this.direction,
+      isDragging: isDragging ?? this.isDragging,
     );
   }
 }

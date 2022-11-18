@@ -16,4 +16,9 @@ class OverlappingPanelsCubit extends Cubit<OverlappingPanelsCubitState> {
     if (isClosed) return;
     emit(state.copyWith(direction: value));
   }
+
+  updateIsDragging(bool value) {
+    if (isClosed) return;
+    emit(state.copyWith(isDragging: value));
+  }
 }

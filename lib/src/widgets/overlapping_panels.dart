@@ -194,6 +194,7 @@ class OverlappingPanelsState extends State<OverlappingPanels> with TickerProvide
           },
           child: GestureDetector(
             onHorizontalDragUpdate: (details) {
+              context.read<OverlappingPanelsCubit>().updateIsDragging(true);
               if (getPositions(mainKey).first > 0) {
                 context.read<OverlappingPanelsCubit>().updateDirection(DragDirection.right);
               } else if (getPositions(mainKey).first < 0) {
@@ -204,6 +205,7 @@ class OverlappingPanelsState extends State<OverlappingPanels> with TickerProvide
               onTranslate(details.delta.dx);
             },
             onHorizontalDragEnd: (details) {
+              context.read<OverlappingPanelsCubit>().updateIsDragging(false);
               _onApplyTranslation();
             },
             child: Stack(
@@ -244,14 +246,19 @@ class OverlappingPanelsState extends State<OverlappingPanels> with TickerProvide
                       onTap: closePanel,
                       child: Builder(
                         builder: (context) {
-                          final calculatedOpacity = 1 -
-                              (!(state.translate.abs() /
-                                              getPanelWidth(context.read<OverlappingPanelsCubit>().state.direction))
-                                          .isNaN
-                                      ? (state.translate.abs() /
-                                          getPanelWidth(context.read<OverlappingPanelsCubit>().state.direction))
-                                      : 0)
-                                  .toDouble();
+                          double calculatedOpacity = 1;
+                          if (!state.isDragging && state.translate == 0) {
+                            calculatedOpacity = 1;
+                          } else {
+                            calculatedOpacity = 1 -
+                                (!(state.translate.abs() /
+                                                getPanelWidth(context.read<OverlappingPanelsCubit>().state.direction))
+                                            .isNaN
+                                        ? (state.translate.abs() /
+                                            getPanelWidth(context.read<OverlappingPanelsCubit>().state.direction))
+                                        : 0)
+                                    .toDouble();
+                          }
                           return Opacity(
                             opacity: calculatedOpacity <= 0.3 ? 0.3 : calculatedOpacity,
                             child: IgnorePointer(

@@ -1,13 +1,36 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+// ignore_for_file: unnecessary_brace_in_string_interps
+
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:reddit_app/src/cubits/listing/listing_cubit.dart';
 import 'package:reddit_app/src/cubits/listing_screen/listing_screen_cubit.dart';
 import 'package:reddit_app/src/helpers/general.dart';
 import 'package:reddit_app/src/widgets/link_card_widget.dart';
 import 'package:reddit_app/src/widgets/overlapping_panels.dart';
+
+class CalcPosition {
+  final double x;
+  final double y;
+  CalcPosition({
+    required this.x,
+    required this.y,
+  });
+}
+
+class CalcSize {
+  final double width;
+  final double height;
+  CalcSize({
+    required this.width,
+    required this.height,
+  });
+}
 
 class ListingScreen extends StatefulWidget {
   static const routeName = 'listing_screen';
@@ -20,6 +43,7 @@ class ListingScreen extends StatefulWidget {
 
 class _ListingScreenState extends State<ListingScreen> {
   ScrollController scollController = ScrollController();
+  GlobalKey<State> key = GlobalKey();
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
@@ -32,6 +56,18 @@ class _ListingScreenState extends State<ListingScreen> {
   void dispose() {
     scollController.dispose();
     super.dispose();
+  }
+
+  CalcPosition getPositions(GlobalKey key) {
+    final RenderBox? renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+    final position = renderBox?.localToGlobal(Offset.zero);
+    return CalcPosition(x: position?.dx ?? 0, y: position?.dy ?? 0);
+  }
+
+  CalcSize getSizes(GlobalKey key) {
+    final RenderBox? renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+    final size = renderBox?.size;
+    return CalcSize(width: size?.width ?? 0, height: size?.height ?? 0);
   }
 
   @override
@@ -100,6 +136,12 @@ class _ListingScreenState extends State<ListingScreen> {
                 main: NotificationListener<ScrollNotification>(
                   onNotification: (scrollNotification) {
                     if (scrollNotification is ScrollUpdateNotification) {
+                      if ((getPositions(key).y) > 0) {
+                        final t = (1.0 - (getPositions(key).y) / getSizes(key).height).clamp(0.0, 1.0);
+                        final fadeStart = math.max(0.0, 1.0 - kToolbarHeight / getSizes(key).height);
+                        final opacity = 1.0 - Interval(fadeStart, 1).transform(t);
+                        context.read<ListingScreenCubit>().updateOpacity(opacity);
+                      }
                       if (scrollNotification.metrics.pixels < 500) {
                         context.read<ListingScreenCubit>().updateFloatingVisibility(false);
                       } else if (scrollNotification.metrics.pixels == scrollNotification.metrics.minScrollExtent) {
@@ -118,173 +160,187 @@ class _ListingScreenState extends State<ListingScreen> {
                   },
                   child: RefreshIndicator(
                     onRefresh: () => context.read<ListingCubit>().fetchInitial(subreddit: widget.subreddit),
-                    child: CustomScrollView(
-                      controller: scollController,
-                      slivers: [
-                        if (listingState.isFetching && listingState.children == null || listingState.children!.isEmpty)
-                          const SliverToBoxAdapter(
-                            child: Padding(
-                              padding: EdgeInsets.only(top: 50),
-                              child: Center(
-                                child: RefreshProgressIndicator(),
-                              ),
-                            ),
-                          )
-                        else ...[
-                          SliverAnimatedOpacity(
-                            opacity: listingScreenState.lastScrollDirection == ScrollDirection.forward ||
-                                    scollController.position.minScrollExtent == scollController.position.pixels ||
-                                    scollController.position.pixels < 500
-                                ? 1
-                                : 0,
-                            duration: const Duration(milliseconds: 300),
-                            sliver: SliverAppBar(
-                              pinned: context.read<ListingScreenCubit>().state.floatingButtonVisible,
-                              titleSpacing: 0,
-                              expandedHeight: 160.0,
-                              leading: ModalRoute.of(context) != null && !ModalRoute.of(context)!.isFirst
-                                  ? IconButton(
-                                      icon: Icon(Platform.isIOS ? Icons.arrow_back_ios : Icons.arrow_back),
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                    )
-                                  : Builder(builder: (context) {
-                                      return IconButton(
-                                        icon: const Icon(Icons.menu),
-                                        onPressed: () {
-                                          OverlappingPanels.of(context)?.reveal(RevealSide.left);
-                                        },
-                                      );
-                                    }),
-                              actions: [
-                                Row(
-                                  children: [
-                                    InkWell(
-                                      borderRadius: BorderRadius.circular(20),
-                                      child: const Padding(
-                                        padding: EdgeInsets.all(5.0),
-                                        child: Icon(Icons.search),
-                                      ),
-                                      onTap: () {},
-                                    ),
-                                    InkWell(
-                                      borderRadius: BorderRadius.circular(20),
-                                      child: const Padding(
-                                        padding: EdgeInsets.all(5.0),
-                                        child: Icon(Icons.sort),
-                                      ),
-                                      onTap: () {},
-                                    ),
-                                    InkWell(
-                                      borderRadius: BorderRadius.circular(20),
-                                      child: const Padding(
-                                        padding: EdgeInsets.all(5.0),
-                                        child: Icon(Icons.more_vert),
-                                      ),
-                                      onTap: () {},
-                                    ),
-                                  ],
+                    child: BlocBuilder<ListingScreenCubit, ListingScreenState>(
+                      builder: (context, listingScreenState) {
+                        return CustomScrollView(
+                          controller: scollController,
+                          slivers: [
+                            if (listingState.isFetching && listingState.children == null ||
+                                listingState.children!.isEmpty)
+                              const SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: EdgeInsets.only(top: 50),
+                                  child: Center(
+                                    child: RefreshProgressIndicator(),
+                                  ),
                                 ),
-                              ],
-                              flexibleSpace: LayoutBuilder(builder: (context, constraints) {
-                                final factor = (80 / constraints.maxHeight) - (80 / 184);
-                                return FlexibleSpaceBar(
-                                  titlePadding: EdgeInsets.only(left: factor * 80),
-                                  title: SafeArea(
-                                    child: Column(
+                              )
+                            else ...[
+                              SliverAnimatedOpacity(
+                                opacity: listingScreenState.lastScrollDirection == ScrollDirection.forward ||
+                                        scollController.position.minScrollExtent == scollController.position.pixels ||
+                                        scollController.position.pixels < 200
+                                    ? 1
+                                    : 0,
+                                duration: const Duration(milliseconds: 300),
+                                sliver: SliverIgnorePointer(
+                                  ignoring: !(listingScreenState.lastScrollDirection == ScrollDirection.forward ||
+                                      scollController.position.minScrollExtent == scollController.position.pixels ||
+                                      scollController.position.pixels < 200),
+                                  sliver: SliverAppBar.medium(
+                                    leading: ModalRoute.of(context) != null && !ModalRoute.of(context)!.isFirst
+                                        ? IconButton(
+                                            icon: Icon(Platform.isIOS ? Icons.arrow_back_ios : Icons.arrow_back),
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                          )
+                                        : Builder(builder: (context) {
+                                            return IconButton(
+                                              icon: const Icon(Icons.menu),
+                                              onPressed: () {
+                                                OverlappingPanels.of(context)?.reveal(RevealSide.left);
+                                              },
+                                            );
+                                          }),
+                                    title: Row(
                                       crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: constraints.maxHeight == 80
-                                          ? MainAxisAlignment.center
-                                          : MainAxisAlignment.end,
                                       children: [
-                                        Row(
-                                          children: [
-                                            Padding(
-                                              padding: const EdgeInsets.only(left: 10),
-                                              child: Text(
-                                                'r/${listingState.subreddit}',
-                                                style: TextStyle(
-                                                    color: Theme.of(context).textTheme.bodyText1?.color, fontSize: 18),
-                                              ),
-                                            ),
-                                            AnimatedSwitcher(
-                                              duration: const Duration(milliseconds: 200),
-                                              child: constraints.maxHeight == 80
-                                                  ? InkWell(
-                                                      borderRadius: BorderRadius.circular(10),
-                                                      onTap: () {},
-                                                      child: const Icon(Icons.arrow_drop_down),
-                                                    )
-                                                  : const SizedBox.shrink(),
-                                            ),
-                                          ],
+                                        Text(
+                                          '${listingState.subreddit}',
+                                          style: TextStyle(
+                                            color: Theme.of(context).textTheme.bodyText1?.color,
+                                            fontSize: 20,
+                                          ),
                                         ),
-                                        AnimatedSwitcher(
-                                          duration: const Duration(milliseconds: 200),
-                                          child: constraints.maxHeight > 150
-                                              ? Padding(
-                                                  padding: const EdgeInsets.only(left: 10),
-                                                  child: Row(
-                                                    children: [
-                                                      InkWell(
-                                                        borderRadius: BorderRadius.circular(10),
-                                                        onTap: () {},
-                                                        child: Padding(
-                                                          padding: const EdgeInsets.all(2.0),
-                                                          child: Row(
-                                                            children: [
-                                                              const Icon(Icons.sort, size: 12),
-                                                              Text(
-                                                                'Hot',
-                                                                style: TextStyle(
-                                                                    fontSize: 11,
-                                                                    color:
-                                                                        Theme.of(context).textTheme.bodyText1?.color),
-                                                              ),
-                                                              const Icon(Icons.arrow_drop_down, size: 12)
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      )
-                                                    ],
-                                                  ),
-                                                )
-                                              : const SizedBox.shrink(),
-                                        ),
+                                        const Icon(Icons.arrow_drop_down)
                                       ],
                                     ),
+                                    actions: [
+                                      Row(
+                                        children: [
+                                          InkWell(
+                                            borderRadius: BorderRadius.circular(20),
+                                            child: const Padding(
+                                              padding: EdgeInsets.all(10.0),
+                                              child: Icon(Icons.search),
+                                            ),
+                                            onTap: () {},
+                                          ),
+                                          InkWell(
+                                            borderRadius: BorderRadius.circular(20),
+                                            child: const Padding(
+                                              padding: EdgeInsets.all(10.0),
+                                              child: Icon(Icons.sort),
+                                            ),
+                                            onTap: () {},
+                                          ),
+                                          InkWell(
+                                            borderRadius: BorderRadius.circular(20),
+                                            child: const Padding(
+                                              padding: EdgeInsets.all(10.0),
+                                              child: Icon(Icons.more_vert),
+                                            ),
+                                            onTap: () {},
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
-                                );
-                              }),
-                            ),
-                          ),
-                          SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                                if (index == listingState.children!.length) {
-                                  if (listingState.isFetching &&
-                                      listingState.children != null &&
-                                      listingState.children!.isNotEmpty) {
-                                    return const Center(
-                                      child: RefreshProgressIndicator(),
+                                ),
+                              ),
+                              // SliverToBoxAdapter(
+                              //   child: Opacity(
+                              //     opacity: listingScreenState.opacity,
+                              //     child: Padding(
+                              //       key: key,
+                              //       padding: const EdgeInsets.symmetric(horizontal: 10),
+                              //       child: Column(
+                              //         crossAxisAlignment: CrossAxisAlignment.stretch,
+                              //         children: [
+                              //           const SizedBox(
+                              //             height: 60,
+                              //           ),
+                              //           Text(
+                              //             '${listingState.subreddit?.toTitleCase()}',
+                              //             style: TextStyle(
+                              //               color: Theme.of(context).textTheme.bodyText1?.color,
+                              //               fontSize: 30,
+                              //             ),
+                              //           ),
+                              //           const SizedBox(
+                              //             height: 10,
+                              //           ),
+                              //           Row(
+                              //             children: [
+                              //               Material(
+                              //                 child: InkWell(
+                              //                   borderRadius: BorderRadius.circular(10),
+                              //                   onTap: () {},
+                              //                   child: Container(
+                              //                     padding: const EdgeInsets.all(5),
+                              //                     decoration: BoxDecoration(
+                              //                       border: Border.all(
+                              //                         color: Colors.grey.shade700,
+                              //                       ),
+                              //                       borderRadius: BorderRadius.circular(10),
+                              //                     ),
+                              //                     child: Row(
+                              //                       children: [
+                              //                         const Icon(Icons.sort, size: 18),
+                              //                         const SizedBox(width: 5),
+                              //                         Text(
+                              //                           'Hot',
+                              //                           style: TextStyle(
+                              //                               color: Theme.of(context).textTheme.bodyText1?.color),
+                              //                         ),
+                              //                         const SizedBox(width: 5),
+                              //                         const Icon(Icons.arrow_drop_down, size: 18)
+                              //                       ],
+                              //                     ),
+                              //                   ),
+                              //                 ),
+                              //               ),
+                              //             ],
+                              //           ),
+                              //         ],
+                              //       ),
+                              //     ),
+                              //   ),
+                              // ),
+                              // const SliverToBoxAdapter(
+                              //   child: SizedBox(
+                              //     height: 30,
+                              //   ),
+                              // ),
+                              SliverList(
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
+                                    if (index == listingState.children!.length) {
+                                      if (listingState.isFetching &&
+                                          listingState.children != null &&
+                                          listingState.children!.isNotEmpty) {
+                                        return const Center(
+                                          child: RefreshProgressIndicator(),
+                                        );
+                                      } else {
+                                        context.read<ListingCubit>().fetchMore(subreddit: widget.subreddit);
+                                        return const SizedBox();
+                                      }
+                                    }
+                                    final item = listingState.children?[index];
+                                    return LinkCardWidget(
+                                      item: item,
+                                      subreddit: listingState.subreddit,
                                     );
-                                  } else {
-                                    context.read<ListingCubit>().fetchMore(subreddit: widget.subreddit);
-                                    return const SizedBox();
-                                  }
-                                }
-                                final item = listingState.children?[index];
-                                return LinkCardWidget(
-                                  item: item,
-                                  subreddit: listingState.subreddit,
-                                );
-                              },
-                              childCount: listingState.children!.length + 1,
-                            ),
-                          )
-                        ]
-                      ],
+                                  },
+                                  childCount: listingState.children!.length + 1,
+                                ),
+                              )
+                            ]
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ),

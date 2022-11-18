@@ -14,6 +14,7 @@ dependencies:
   bloc_concurrency: ^0.2.0
   collection: ^1.16.0
   dio: ^4.0.6
+  dismissible_page: ^0.7.3
   dynamic_color: ^1.5.4
   equatable: ^2.0.5
   flex_color_scheme: ^6.0.1
@@ -32,6 +33,7 @@ dependencies:
   path: ^1.8.2
   path_provider: ^2.0.11
   video_player: ^2.4.7
+  visibility_detector: ^0.3.3
 
 dev_dependencies:
   flutter_test:
