@@ -104,26 +104,42 @@ class LinkCardWidget extends StatelessWidget {
                   p: Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: 13, height: 1.3),
                 ),
               ),
-              if (item?.data?.preview?.images?.first.source?.url != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 10,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: LayoutBuilder(builder: (context, contraints) {
-                      return AspectRatio(
-                        aspectRatio: item!.data!.preview!.images!.first.source!.width!.toDouble() /
-                            item!.data!.preview!.images!.first.source!.height!.toDouble(),
-                        child: Image.network(
-                          '${item?.data?.preview?.images?.first.source?.url}',
-                          fit: BoxFit.contain,
-                          cacheHeight: contraints.maxWidth.toInt(),
-                        ),
-                      );
-                    }),
-                  ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Builder(builder: (context) {
+                    if (item?.data?.preview?.images?.first.source?.url != null) {
+                      return LayoutBuilder(builder: (context, contraints) {
+                        return AspectRatio(
+                          aspectRatio: item!.data!.preview!.images!.first.source!.width!.toDouble() /
+                              item!.data!.preview!.images!.first.source!.height!.toDouble(),
+                          child: Image.network(
+                            '${item?.data?.preview?.images?.first.source?.url}',
+                            fit: BoxFit.contain,
+                            cacheHeight: contraints.maxWidth.toInt(),
+                          ),
+                        );
+                      });
+                    } else if (item?.data?.mediaMetadata != null) {
+                      final mediaDatum = item?.data?.mediaMetadata?.values.toList().first;
+                      final aspectRatio = mediaDatum!.s!.x! / mediaDatum.s!.y!;
+                      return LayoutBuilder(builder: (context, contraints) {
+                        return AspectRatio(
+                          aspectRatio: aspectRatio,
+                          child: Image.network(
+                            '${mediaDatum.s?.u}',
+                            fit: BoxFit.contain,
+                            cacheHeight: contraints.maxWidth.toInt(),
+                          ),
+                        );
+                      });
+                    } else {
+                      return const SizedBox.shrink();
+                    }
+                  }),
                 ),
+              ),
               Row(
                 children: [
                   Container(

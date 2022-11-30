@@ -35,7 +35,7 @@ class CalcSize {
 class ListingScreen extends StatefulWidget {
   static const routeName = 'listing_screen';
   final String subreddit;
-  const ListingScreen({this.subreddit = 'popular', super.key});
+  const ListingScreen({this.subreddit = 'supermodelindia', super.key});
 
   @override
   State<ListingScreen> createState() => _ListingScreenState();
@@ -83,17 +83,15 @@ class _ListingScreenState extends State<ListingScreen> {
                     ? FloatingActionButton(
                         onPressed: () async {
                           context.read<ListingScreenCubit>().updateScrollPosition(scollController.position.pixels);
-                          await scollController.animateTo(0,
-                              duration: const Duration(milliseconds: 1000), curve: Curves.ease);
+                          scollController.jumpTo(0);
                           if (!mounted) return;
                           await showSnackBar(
                             value: const Text('Go back ?'),
                             action: SnackBarAction(
                               label: 'OK',
                               textColor: Theme.of(context).primaryColorDark,
-                              onPressed: () async {
-                                await scollController.animateTo(context.read<ListingScreenCubit>().state.scrollPosition,
-                                    duration: const Duration(milliseconds: 1000), curve: Curves.ease);
+                              onPressed: () {
+                                scollController.jumpTo(context.read<ListingScreenCubit>().state.scrollPosition);
                               },
                             ),
                           );
@@ -118,21 +116,21 @@ class _ListingScreenState extends State<ListingScreen> {
                     ],
                   ),
                 ),
-                right: Drawer(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      DrawerHeader(
-                        decoration: BoxDecoration(color: Theme.of(context).primaryColorDark),
-                        child: const Text('Welcome'),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: TextFormField(),
-                      )
-                    ],
-                  ),
-                ),
+                // right: Drawer(
+                //   child: Column(
+                //     crossAxisAlignment: CrossAxisAlignment.stretch,
+                //     children: [
+                //       DrawerHeader(
+                //         decoration: BoxDecoration(color: Theme.of(context).primaryColorDark),
+                //         child: const Text('Welcome'),
+                //       ),
+                //       Padding(
+                //         padding: const EdgeInsets.all(8.0),
+                //         child: TextFormField(),
+                //       )
+                //     ],
+                //   ),
+                // ),
                 main: NotificationListener<ScrollNotification>(
                   onNotification: (scrollNotification) {
                     if (scrollNotification is ScrollUpdateNotification) {
@@ -207,7 +205,7 @@ class _ListingScreenState extends State<ListingScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          '${listingState.subreddit}',
+                                          '${listingState.subreddit?.toTitleCase()}',
                                           style: TextStyle(
                                             color: Theme.of(context).textTheme.bodyText1?.color,
                                             fontSize: 20,
@@ -249,70 +247,6 @@ class _ListingScreenState extends State<ListingScreen> {
                                   ),
                                 ),
                               ),
-                              // SliverToBoxAdapter(
-                              //   child: Opacity(
-                              //     opacity: listingScreenState.opacity,
-                              //     child: Padding(
-                              //       key: key,
-                              //       padding: const EdgeInsets.symmetric(horizontal: 10),
-                              //       child: Column(
-                              //         crossAxisAlignment: CrossAxisAlignment.stretch,
-                              //         children: [
-                              //           const SizedBox(
-                              //             height: 60,
-                              //           ),
-                              //           Text(
-                              //             '${listingState.subreddit?.toTitleCase()}',
-                              //             style: TextStyle(
-                              //               color: Theme.of(context).textTheme.bodyText1?.color,
-                              //               fontSize: 30,
-                              //             ),
-                              //           ),
-                              //           const SizedBox(
-                              //             height: 10,
-                              //           ),
-                              //           Row(
-                              //             children: [
-                              //               Material(
-                              //                 child: InkWell(
-                              //                   borderRadius: BorderRadius.circular(10),
-                              //                   onTap: () {},
-                              //                   child: Container(
-                              //                     padding: const EdgeInsets.all(5),
-                              //                     decoration: BoxDecoration(
-                              //                       border: Border.all(
-                              //                         color: Colors.grey.shade700,
-                              //                       ),
-                              //                       borderRadius: BorderRadius.circular(10),
-                              //                     ),
-                              //                     child: Row(
-                              //                       children: [
-                              //                         const Icon(Icons.sort, size: 18),
-                              //                         const SizedBox(width: 5),
-                              //                         Text(
-                              //                           'Hot',
-                              //                           style: TextStyle(
-                              //                               color: Theme.of(context).textTheme.bodyText1?.color),
-                              //                         ),
-                              //                         const SizedBox(width: 5),
-                              //                         const Icon(Icons.arrow_drop_down, size: 18)
-                              //                       ],
-                              //                     ),
-                              //                   ),
-                              //                 ),
-                              //               ),
-                              //             ],
-                              //           ),
-                              //         ],
-                              //       ),
-                              //     ),
-                              //   ),
-                              // ),
-                              // const SliverToBoxAdapter(
-                              //   child: SizedBox(
-                              //     height: 30,
-                              //   ),
-                              // ),
                               SliverList(
                                 delegate: SliverChildBuilderDelegate(
                                   (context, index) {
