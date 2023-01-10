@@ -41,7 +41,6 @@ enum InnerDrawerAnimation {
 //width before initState
 const double _kWidth = 400;
 const double _kMinFlingVelocity = 365.0;
-const double _kEdgeDragWidth = 20.0;
 const Duration _kBaseSettleDuration = Duration(milliseconds: 246);
 
 // ignore: must_be_immutable
