@@ -61,7 +61,14 @@ class _AppState extends State<App> with WidgetsBindingObserver {
               scaffoldMessengerKey: snackbarKey,
               themeMode: themeState.selectedTheme,
               initialRoute: ListingScreen.routeName,
-              builder: (context, child) => child ?? const SizedBox(),
+              builder: (context, child) => ScrollConfiguration(
+                behavior: CustomScrollBehavior(),
+                child: GestureDetector(
+                    onTap: () {
+                      FocusManager.instance.primaryFocus?.unfocus();
+                    },
+                    child: child ?? const SizedBox.shrink()),
+              ),
               onGenerateRoute: RouteGenerator.generateRoute,
             );
           },

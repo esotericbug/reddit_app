@@ -6,7 +6,7 @@ import 'package:html/parser.dart' as htmlparser;
 final GlobalKey<ScaffoldMessengerState> snackbarKey = GlobalKey<ScaffoldMessengerState>();
 
 class Dev {
-  static log(dynamic value) => dev.log('$value');
+  static log([dynamic value]) => dev.log('$value');
 }
 
 class AddBorder extends StatelessWidget {
@@ -69,4 +69,115 @@ showSnackBar(
 extension StringExtension on String {
   String toCapitalized() => length > 0 ? '${this[0].toUpperCase()}${substring(1).toLowerCase()}' : '';
   String toTitleCase() => replaceAll(RegExp(' +'), ' ').split(' ').map((str) => str.toCapitalized()).join(' ');
+}
+
+class CalcPosition {
+  final double x;
+  final double y;
+  CalcPosition({
+    required this.x,
+    required this.y,
+  });
+}
+
+class CalcSize {
+  final double width;
+  final double height;
+  CalcSize({
+    required this.width,
+    required this.height,
+  });
+}
+
+class BoundingMeasurements {
+  static CalcPosition position(GlobalKey key) {
+    final RenderBox? renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+    final position = renderBox?.localToGlobal(Offset.zero);
+    return CalcPosition(x: position?.dx ?? 0, y: position?.dy ?? 0);
+  }
+
+  static CalcSize size(GlobalKey key) {
+    final RenderBox? renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+    final size = renderBox?.size;
+    return CalcSize(width: size?.width ?? 0, height: size?.height ?? 0);
+  }
+}
+
+Future<bool> showExitPopup(BuildContext context) async {
+  if (ModalRoute.of(context) != null && ModalRoute.of(context)!.isFirst) {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Exit App'),
+            content: const Text(
+              'Do you want to exit this app?',
+              textAlign: TextAlign.center,
+            ),
+            actionsAlignment: MainAxisAlignment.center,
+            actions: [
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Yes'),
+              ),
+              OutlinedButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('No'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  } else {
+    return true;
+  }
+}
+
+class CustomScrollBehavior extends ScrollBehavior {
+  @override
+  Widget buildOverscrollIndicator(BuildContext context, Widget child, ScrollableDetails details) {
+    return child;
+  }
+}
+
+class ImageWithLoader extends StatelessWidget {
+  final String? url;
+  final num? width;
+  final num? height;
+  final bool withCacheHeight;
+  const ImageWithLoader(
+    this.url, {
+    this.width,
+    this.height,
+    this.withCacheHeight = true,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, contraints) {
+        return AspectRatio(
+          aspectRatio: (width?.toDouble() ?? 1) / (height?.toDouble() ?? 1),
+          child: Image.network(
+            '$url',
+            fit: BoxFit.contain,
+            cacheHeight: contraints.maxWidth.isFinite && withCacheHeight ? contraints.maxWidth.toInt() * 2 : null,
+            loadingBuilder: (context, child, loadingProgress) => (loadingProgress == null)
+                ? child
+                : const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+String getFormattedDuration(Duration duration) {
+  String twoDigits(int n, {int? padLeft}) => n.toString().padLeft(padLeft ?? (n == 0 ? 1 : 2), "0");
+  String twoDigitHours = twoDigits(duration.inHours);
+  String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+  String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60), padLeft: 2);
+  return "${duration.inHours != 0 ? '$twoDigitHours:' : ''}$twoDigitMinutes:$twoDigitSeconds";
 }

@@ -1,9 +1,13 @@
 import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/material.dart';
+import 'package:reddit_app/src/models/listing_response_model.dart';
+import 'package:reddit_app/src/widgets/link_card_widget.dart';
 
 class LinkDetailScreen extends StatelessWidget {
   static const routeName = 'link_detail_screen';
-  const LinkDetailScreen({super.key});
+
+  final LinkResponse? item;
+  const LinkDetailScreen({this.item, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +24,7 @@ class LinkDetailScreen extends StatelessWidget {
           slivers: [
             SliverAppBar(
               floating: true,
+              title: Text('${item?.data?.subreddit}'),
               actions: [
                 Row(
                   children: [
@@ -50,6 +55,13 @@ class LinkDetailScreen extends StatelessWidget {
                   ],
                 ),
               ],
+            ),
+            SliverToBoxAdapter(
+              child: LinkCardWidget(
+                item: item,
+                subreddit: item?.data?.subreddit,
+                bodyExpanded: true,
+              ),
             ),
             SliverList(
               delegate: SliverChildBuilderDelegate(

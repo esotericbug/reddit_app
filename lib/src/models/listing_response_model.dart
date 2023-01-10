@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 // To parse this JSON data, do
 //
 //     final listingResponse = listingResponseFromMap(jsonString);
@@ -571,6 +572,92 @@ class LinkData {
             : Map.from(mediaMetadata!).map((k, v) => MapEntry<String, dynamic>(k, v.toMap())),
         "gallery_data": galleryData?.toMap(),
       };
+
+  RedditMedia? get getPreviewImage {
+    if (preview?.images?.first.source?.url != null) {
+      return RedditMedia(
+        url: preview?.images?.first.source?.url,
+        width: preview?.images?.first.source?.width,
+        height: preview?.images?.first.source?.height,
+      );
+    } else if (mediaMetadata != null) {
+      final mediaDatum = mediaMetadata?[galleryData?.items?.first.mediaId];
+      return RedditMedia(
+        url: mediaDatum?.s?.u,
+        width: mediaDatum!.s?.x,
+        height: mediaDatum.s?.y,
+      );
+    } else {
+      return null;
+    }
+  }
+
+  List<RedditMedia> get getImagesAndVideos {
+    List<RedditMedia> data = [];
+
+    if (media != null) {
+      data.add(
+        RedditMedia(
+          url: media?.redditVideo?.hlsUrl,
+          width: media?.redditVideo?.width,
+          height: media?.redditVideo?.height,
+          type: media?.redditVideo?.isGif == true ? MediaType.gif : MediaType.video,
+        ),
+      );
+    }
+
+    if (galleryData != null && mediaMetadata != null) {
+      galleryData?.items?.forEach(
+        (galData) {
+          if (mediaMetadata?[galData.mediaId]?.m?.contains('gif') == true) {
+            data.add(
+              RedditMedia(
+                url: mediaMetadata?[galData.mediaId]?.s?.mp4,
+                width: mediaMetadata?[galData.mediaId]?.s?.x,
+                height: mediaMetadata?[galData.mediaId]?.s?.y,
+                type: MediaType.gif,
+              ),
+            );
+          } else if (mediaMetadata?[galData.mediaId]?.m?.contains('video') == true) {
+            data.add(
+              RedditMedia(
+                url: mediaMetadata?[galData.mediaId]?.s?.u,
+                width: mediaMetadata?[galData.mediaId]?.s?.x,
+                height: mediaMetadata?[galData.mediaId]?.s?.y,
+                type: MediaType.video,
+              ),
+            );
+          } else {
+            data.add(
+              RedditMedia(
+                url: mediaMetadata?[galData.mediaId]?.s?.u,
+                width: mediaMetadata?[galData.mediaId]?.s?.x,
+                height: mediaMetadata?[galData.mediaId]?.s?.y,
+                type: MediaType.image,
+              ),
+            );
+          }
+        },
+      );
+    }
+
+    if (data.isEmpty) {
+      if (preview != null && preview?.images != null) {
+        preview?.images?.forEach((image) {
+          data.add(
+            RedditMedia(
+              url: image.source?.url,
+              width: image.source?.width,
+              height: image.source?.height,
+              type: MediaType.image,
+            ),
+          );
+        });
+      }
+    }
+
+    return data;
+  }
 }
 
 class AllAwarding {
@@ -923,15 +1010,13 @@ class MediaMetadatum {
 }
 
 class S {
-  S({
-    this.y,
-    this.x,
-    this.u,
-  });
+  S({this.y, this.x, this.u, this.gif, this.mp4});
 
   num? y;
   num? x;
   String? u;
+  String? gif;
+  String? mp4;
 
   factory S.fromJson(String str) => S.fromMap(json.decode(str));
 
@@ -941,12 +1026,16 @@ class S {
         y: json["y"],
         x: json["x"],
         u: json["u"],
+        mp4: json["mp4"],
+        gif: json["gif"],
       );
 
   Map<String, dynamic> toMap() => {
         "y": y,
         "x": x,
         "u": u,
+        "mp4": mp4,
+        "gif": mp4,
       };
 }
 
@@ -1058,3 +1147,19 @@ class Nsfw {
         "resolutions": resolutions == null ? null : List<dynamic>.from(resolutions!.map((x) => x.toMap())),
       };
 }
+
+class RedditMedia {
+  final String? url;
+  final num? width;
+  final num? height;
+  final MediaType? type;
+
+  RedditMedia({
+    this.url,
+    this.width,
+    this.height,
+    this.type,
+  });
+}
+
+enum MediaType { video, image, gif }

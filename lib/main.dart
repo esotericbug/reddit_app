@@ -13,6 +13,20 @@ void main() async {
   await SystemChrome.setPreferredOrientations(
     DeviceOrientation.values,
   );
+//    await SystemChrome.setEnabledSystemUIMode(
+//     SystemUiMode.edgeToEdge,
+//     overlays: SystemUiOverlay.values,
+//   );
+// await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+// SystemChrome.setSystemUIOverlayStyle(
+//     const SystemUiOverlayStyle(
+//       systemNavigationBarContrastEnforced: false,
+//       systemNavigationBarColor: Colors.transparent,
+//       systemNavigationBarIconBrightness: Brightness.dark,
+//       statusBarIconBrightness: Brightness.dark,
+//       statusBarColor: Colors.transparent,
+//     ),
+//   );
   runApp(MultiBlocProvider(
     providers: [
       BlocProvider(

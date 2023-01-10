@@ -1,23 +1,36 @@
+import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
 import 'package:reddit_app/src/helpers/general.dart';
 import 'package:reddit_app/src/models/listing_response_model.dart';
 import 'package:reddit_app/src/screens/link_detail_screen.dart';
 import 'package:reddit_app/src/screens/listing_screen.dart';
+import 'package:reddit_app/src/widgets/gallery_widget.dart';
+import 'package:reddit_app/src/widgets/video_player_widget.dart';
 
 class LinkCardWidget extends StatelessWidget {
   final String? subreddit;
   final LinkResponse? item;
-  const LinkCardWidget({this.item, this.subreddit, super.key});
+  final bool bodyExpanded;
+  const LinkCardWidget({this.bodyExpanded = false, this.item, this.subreddit, super.key});
 
   @override
   Widget build(BuildContext context) {
+    Future<void> openURL(dynamic url) async {
+      final browser = ChromeSafariBrowser();
+      await browser.open(url: Uri.parse('$url'));
+    }
+
     return Material(
-      child: InkWell(
+      child: GestureDetector(
         onTap: () {
-          // context.pushTransparentRoute(const LinkDetailScreen());
-          Navigator.maybeOf(context)?.pushNamed(LinkDetailScreen.routeName);
+          if (!bodyExpanded) {
+            Navigator.maybeOf(context)?.pushNamed(LinkDetailScreen.routeName, arguments: {
+              'item': item,
+            });
+          }
         },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
@@ -90,93 +103,150 @@ class LinkCardWidget extends StatelessWidget {
                   )
                 ],
               ),
-              MarkdownBody(
-                styleSheet: markdownDefaultTheme(context).copyWith(
-                  p: Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: 17, height: 1.3),
+              if (!bodyExpanded)
+                MarkdownBody(
+                  styleSheet: markdownDefaultTheme(context).copyWith(
+                    p: Theme.of(context).textTheme.bodyText1?.copyWith(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          height: 1.3,
+                        ),
+                  ),
+                  data: parseHTMLToString(item?.data?.title),
                 ),
-                data: parseHTMLToString(item?.data?.title),
-              ),
               MarkdownBody(
-                data: parseHTMLToString(item?.data?.selftext).length > 250
+                data: !bodyExpanded && parseHTMLToString(item?.data?.selftext).length > 250
                     ? '${parseHTMLToString(item?.data?.selftext).substring(0, 250)}...'
                     : parseHTMLToString(item?.data?.selftext),
                 styleSheet: markdownDefaultTheme(context).copyWith(
-                  p: Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: 13, height: 1.3),
+                  p: Theme.of(context).textTheme.bodyText1?.copyWith(
+                        fontSize: 12,
+                        height: 1.3,
+                      ),
                 ),
+                onTapLink: (text, href, title) async {
+                  await openURL(href);
+                  Dev.log(href);
+                },
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Builder(builder: (context) {
-                    if (item?.data?.preview?.images?.first.source?.url != null) {
-                      return LayoutBuilder(builder: (context, contraints) {
-                        return AspectRatio(
-                          aspectRatio: item!.data!.preview!.images!.first.source!.width!.toDouble() /
-                              item!.data!.preview!.images!.first.source!.height!.toDouble(),
-                          child: Image.network(
-                            '${item?.data?.preview?.images?.first.source?.url}',
-                            fit: BoxFit.contain,
-                            cacheHeight: contraints.maxWidth.toInt(),
-                          ),
-                        );
-                      });
-                    } else if (item?.data?.mediaMetadata != null) {
-                      final mediaDatum = item?.data?.mediaMetadata?.values.toList().first;
-                      final aspectRatio = mediaDatum!.s!.x! / mediaDatum.s!.y!;
-                      return LayoutBuilder(builder: (context, contraints) {
-                        return AspectRatio(
-                          aspectRatio: aspectRatio,
-                          child: Image.network(
-                            '${mediaDatum.s?.u}',
-                            fit: BoxFit.contain,
-                            cacheHeight: contraints.maxWidth.toInt(),
-                          ),
-                        );
-                      });
-                    } else {
-                      return const SizedBox.shrink();
-                    }
-                  }),
-                ),
-              ),
+              Builder(builder: (context) {
+                final redditMediaList = item?.data?.getImagesAndVideos;
+                openGallery() {
+                  final galleryItems = redditMediaList
+                          ?.map(
+                            (media) => media.type == MediaType.image
+                                ? ImageWithLoader(
+                                    media.url,
+                                    width: media.width,
+                                    height: media.height,
+                                    withCacheHeight: false,
+                                  )
+                                : media.url != null
+                                    ? VideoPlayerWidget(
+                                        url: media.url.toString(),
+                                      )
+                                    : null,
+                          )
+                          .whereType<Widget>()
+                          .toList() ??
+                      [];
+                  if (galleryItems.isNotEmpty) {
+                    context.pushTransparentRoute(
+                      GalleryWidget(
+                        children: [
+                          ...galleryItems,
+                        ],
+                      ),
+                    );
+                  }
+                }
+
+                if (item?.data?.getPreviewImage != null) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(15),
+                      child: GestureDetector(
+                        onTap: openGallery,
+                        child: Stack(
+                          fit: StackFit.loose,
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            ImageWithLoader(
+                              item?.data?.getPreviewImage?.url,
+                              width: item?.data?.getPreviewImage?.width,
+                              height: item?.data?.getPreviewImage?.height,
+                            ),
+                            Container(
+                              margin: const EdgeInsets.all(7),
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.black87.withOpacity(0.8),
+                                shape: BoxShape.rectangle,
+                                borderRadius: BorderRadius.circular(5),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: Icon(
+                                redditMediaList?.first.type == MediaType.gif
+                                    ? Icons.gif
+                                    : redditMediaList?.first.type == MediaType.video
+                                        ? Icons.videocam_rounded
+                                        : Icons.image,
+                                size: 20,
+                                color: Colors.white,
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
               Row(
                 children: [
-                  Container(
-                    margin: const EdgeInsets.all(3),
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.grey.shade800,
+                  GestureDetector(
+                    onTap: () {},
+                    child: Container(
+                      margin: const EdgeInsets.all(3),
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.grey.shade800,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        InkWell(
-                          borderRadius: BorderRadius.circular(20),
-                          onTap: () {},
-                          child: const Padding(
-                            padding: EdgeInsets.all(4),
-                            child: Icon(Icons.expand_less),
+                      child: Row(
+                        children: [
+                          InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () {},
+                            child: const Padding(
+                              padding: EdgeInsets.all(2),
+                              child: Icon(Icons.expand_less),
+                            ),
                           ),
-                        ),
-                        Text(
-                          NumberFormat.compactCurrency(
-                            decimalDigits: 0,
-                            locale: 'en_US',
-                            symbol: '',
-                          ).format(item?.data?.score),
-                        ),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(20),
-                          onTap: () {},
-                          child: const Padding(
-                            padding: EdgeInsets.all(4),
-                            child: Icon(Icons.expand_more),
+                          Text(
+                            NumberFormat.compactCurrency(
+                              decimalDigits: 0,
+                              locale: 'en_US',
+                              symbol: '',
+                            ).format(item?.data?.score),
                           ),
-                        ),
-                      ],
+                          InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () {},
+                            child: const Padding(
+                              padding: EdgeInsets.all(2),
+                              child: Icon(Icons.expand_more),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   Container(
@@ -188,11 +258,15 @@ class LinkCardWidget extends StatelessWidget {
                     ),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(7),
-                      onTap: () {
-                        Navigator.maybeOf(context)?.pushNamed(LinkDetailScreen.routeName);
-                      },
+                      onTap: !bodyExpanded
+                          ? () {
+                              Navigator.maybeOf(context)?.pushNamed(LinkDetailScreen.routeName, arguments: {
+                                'item': item,
+                              });
+                            }
+                          : () {},
                       child: Padding(
-                        padding: const EdgeInsets.all(6),
+                        padding: const EdgeInsets.all(4),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [

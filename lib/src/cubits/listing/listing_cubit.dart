@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
+import 'package:reddit_app/src/helpers/general.dart';
 import 'package:reddit_app/src/helpers/http.dart';
 import 'package:reddit_app/src/models/error_response_model.dart';
 import 'package:reddit_app/src/models/listing_response_model.dart';
@@ -27,6 +28,7 @@ class ListingCubit extends Cubit<ListingState> {
       ));
     } on DioError catch (e) {
       final errorResponse = ErrorResponse.fromJson(e.response?.data);
+      Dev.log(errorResponse);
       if (isClosed) return;
       emit(state.copyWith(
         children: null,
