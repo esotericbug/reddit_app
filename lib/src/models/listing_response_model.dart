@@ -210,6 +210,7 @@ class LinkData {
     this.isGallery,
     this.mediaMetadata,
     this.galleryData,
+    this.crosspostParentList,
   });
 
   num? approvedAtUtc;
@@ -325,6 +326,7 @@ class LinkData {
   bool? isGallery;
   Map<String, MediaMetadatum>? mediaMetadata;
   GalleryData? galleryData;
+  List<LinkData>? crosspostParentList;
 
   factory LinkData.fromJson(String str) => LinkData.fromMap(json.decode(str));
 
@@ -452,6 +454,9 @@ class LinkData {
             : Map.from(json["media_metadata"])
                 .map((k, v) => MapEntry<String, MediaMetadatum>(k, MediaMetadatum.fromMap(v))),
         galleryData: json["gallery_data"] == null ? null : GalleryData.fromMap(json["gallery_data"]),
+        crosspostParentList: json["crosspost_parent_list"] == null
+            ? []
+            : List<LinkData>.from(json["crosspost_parent_list"]!.map((x) => LinkData.fromMap(x))),
       );
 
   Map<String, dynamic> toMap() => {
@@ -571,17 +576,25 @@ class LinkData {
             ? null
             : Map.from(mediaMetadata!).map((k, v) => MapEntry<String, dynamic>(k, v.toMap())),
         "gallery_data": galleryData?.toMap(),
+        "crosspost_parent_list":
+            crosspostParentList == null ? [] : List<dynamic>.from(crosspostParentList!.map((x) => x.toMap())),
       };
 
   RedditMedia? get getPreviewImage {
-    if (preview?.images?.first.source?.url != null) {
+    LinkData? crossLinkData;
+    if (crosspostParentList != null && crosspostParentList!.isNotEmpty) {
+      crossLinkData = crosspostParentList?.first;
+    }
+
+    if ((crossLinkData?.preview ?? preview)?.images?.first.source?.url != null) {
       return RedditMedia(
-        url: preview?.images?.first.source?.url,
-        width: preview?.images?.first.source?.width,
-        height: preview?.images?.first.source?.height,
+        url: (crossLinkData?.preview ?? preview)?.images?.first.source?.url,
+        width: (crossLinkData?.preview ?? preview)?.images?.first.source?.width,
+        height: (crossLinkData?.preview ?? preview)?.images?.first.source?.height,
       );
-    } else if (mediaMetadata != null) {
-      final mediaDatum = mediaMetadata?[galleryData?.items?.first.mediaId];
+    } else if ((crossLinkData?.mediaMetadata ?? mediaMetadata) != null) {
+      final mediaDatum = (crossLinkData?.mediaMetadata ??
+          mediaMetadata)?[(crossLinkData?.galleryData ?? galleryData)?.items?.first.mediaId];
       return RedditMedia(
         url: mediaDatum?.s?.u,
         width: mediaDatum!.s?.x,
@@ -595,44 +608,50 @@ class LinkData {
   List<RedditMedia> get getImagesAndVideos {
     List<RedditMedia> data = [];
 
-    if (media != null) {
+    LinkData? crossLinkData;
+    if (crosspostParentList != null && crosspostParentList!.isNotEmpty) {
+      crossLinkData = crosspostParentList?.first;
+    }
+
+    if ((crossLinkData?.media ?? media) != null) {
       data.add(
         RedditMedia(
-          url: media?.redditVideo?.hlsUrl,
-          width: media?.redditVideo?.width,
-          height: media?.redditVideo?.height,
-          type: media?.redditVideo?.isGif == true ? MediaType.gif : MediaType.video,
+          url: (crossLinkData?.media ?? media)?.redditVideo?.hlsUrl,
+          width: (crossLinkData?.media ?? media)?.redditVideo?.width,
+          height: (crossLinkData?.media ?? media)?.redditVideo?.height,
+          type: (crossLinkData?.media ?? media)?.redditVideo?.isGif == true ? MediaType.gif : MediaType.video,
         ),
       );
     }
 
-    if (galleryData != null && mediaMetadata != null) {
-      galleryData?.items?.forEach(
+    if ((crossLinkData?.galleryData ?? galleryData) != null &&
+        (crossLinkData?.mediaMetadata ?? mediaMetadata) != null) {
+      (crossLinkData?.galleryData ?? galleryData)?.items?.forEach(
         (galData) {
-          if (mediaMetadata?[galData.mediaId]?.m?.contains('gif') == true) {
+          if ((crossLinkData?.mediaMetadata ?? mediaMetadata)?[galData.mediaId]?.m?.contains('gif') == true) {
             data.add(
               RedditMedia(
-                url: mediaMetadata?[galData.mediaId]?.s?.mp4,
-                width: mediaMetadata?[galData.mediaId]?.s?.x,
-                height: mediaMetadata?[galData.mediaId]?.s?.y,
+                url: (crossLinkData?.mediaMetadata ?? mediaMetadata)?[galData.mediaId]?.s?.mp4,
+                width: (crossLinkData?.mediaMetadata ?? mediaMetadata)?[galData.mediaId]?.s?.x,
+                height: (crossLinkData?.mediaMetadata ?? mediaMetadata)?[galData.mediaId]?.s?.y,
                 type: MediaType.gif,
               ),
             );
-          } else if (mediaMetadata?[galData.mediaId]?.m?.contains('video') == true) {
+          } else if ((crossLinkData?.mediaMetadata ?? mediaMetadata)?[galData.mediaId]?.m?.contains('video') == true) {
             data.add(
               RedditMedia(
-                url: mediaMetadata?[galData.mediaId]?.s?.u,
-                width: mediaMetadata?[galData.mediaId]?.s?.x,
-                height: mediaMetadata?[galData.mediaId]?.s?.y,
+                url: (crossLinkData?.mediaMetadata ?? mediaMetadata)?[galData.mediaId]?.s?.u,
+                width: (crossLinkData?.mediaMetadata ?? mediaMetadata)?[galData.mediaId]?.s?.x,
+                height: (crossLinkData?.mediaMetadata ?? mediaMetadata)?[galData.mediaId]?.s?.y,
                 type: MediaType.video,
               ),
             );
           } else {
             data.add(
               RedditMedia(
-                url: mediaMetadata?[galData.mediaId]?.s?.u,
-                width: mediaMetadata?[galData.mediaId]?.s?.x,
-                height: mediaMetadata?[galData.mediaId]?.s?.y,
+                url: (crossLinkData?.mediaMetadata ?? mediaMetadata)?[galData.mediaId]?.s?.u,
+                width: (crossLinkData?.mediaMetadata ?? mediaMetadata)?[galData.mediaId]?.s?.x,
+                height: (crossLinkData?.mediaMetadata ?? mediaMetadata)?[galData.mediaId]?.s?.y,
                 type: MediaType.image,
               ),
             );
@@ -642,8 +661,8 @@ class LinkData {
     }
 
     if (data.isEmpty) {
-      if (preview != null && preview?.images != null) {
-        preview?.images?.forEach((image) {
+      if ((crossLinkData?.preview ?? preview) != null && (crossLinkData?.preview ?? preview)?.images != null) {
+        (crossLinkData?.preview ?? preview)?.images?.forEach((image) {
           data.add(
             RedditMedia(
               url: image.source?.url,

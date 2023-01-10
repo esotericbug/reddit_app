@@ -591,25 +591,25 @@ class InnerDrawerState extends State<InnerDrawer> with SingleTickerProviderState
   }
 
   /// Trigger Area
-  Widget _trigger(AlignmentDirectional alignment, Widget? child) {
-    final bool drawerIsStart = _position == InnerDrawerDirection.start;
-    final EdgeInsets padding = MediaQuery.of(context).padding;
-    double dragAreaWidth = drawerIsStart ? padding.left : padding.right;
+  // Widget _trigger(AlignmentDirectional alignment, Widget? child) {
+  //   final bool drawerIsStart = _position == InnerDrawerDirection.start;
+  //   final EdgeInsets padding = MediaQuery.of(context).padding;
+  //   double dragAreaWidth = drawerIsStart ? padding.left : padding.right;
 
-    if (Directionality.of(context) == TextDirection.rtl) {
-      dragAreaWidth = drawerIsStart ? padding.right : padding.left;
-    }
-    dragAreaWidth = max(dragAreaWidth, _kEdgeDragWidth);
+  //   if (Directionality.of(context) == TextDirection.rtl) {
+  //     dragAreaWidth = drawerIsStart ? padding.right : padding.left;
+  //   }
+  //   dragAreaWidth = max(dragAreaWidth, _kEdgeDragWidth);
 
-    if (_controller.status == AnimationStatus.completed && _swipe && child != null) {
-      return Align(
-        alignment: alignment,
-        child: Container(color: Colors.transparent, width: dragAreaWidth),
-      );
-    } else {
-      return const SizedBox.shrink();
-    }
-  }
+  //   if (_controller.status == AnimationStatus.completed && _swipe && child != null) {
+  //     return Align(
+  //       alignment: alignment,
+  //       child: Container(color: Colors.transparent, width: dragAreaWidth),
+  //     );
+  //   } else {
+  //     return const SizedBox.shrink();
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {

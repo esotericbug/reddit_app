@@ -1,10 +1,7 @@
-import 'dart:math';
-
 import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
-import 'package:reddit_app/src/helpers/general.dart';
 import 'package:rxdart/rxdart.dart';
 
 class GalleryWidget extends StatefulWidget {

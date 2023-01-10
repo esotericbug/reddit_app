@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:reddit_app/src/blocs/drawer_search/drawer_search_bloc.dart';
 import 'package:reddit_app/src/cubits/theme/theme_cubit.dart';
-import 'package:reddit_app/src/helpers/general.dart';
 import 'package:reddit_app/src/screens/listing_screen.dart';
 
 class GlobalLeftDrawer extends StatefulWidget {
