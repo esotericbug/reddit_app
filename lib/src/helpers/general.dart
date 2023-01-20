@@ -39,7 +39,10 @@ MarkdownStyleSheet markdownDefaultTheme(BuildContext context) => MarkdownStyleSh
       blockquotePadding: const EdgeInsets.only(left: 14),
       blockquoteDecoration: BoxDecoration(
         border: Border(
-          left: BorderSide(color: Colors.grey.shade300, width: 4),
+          left: BorderSide(
+            color: Theme.of(context).primaryColor,
+            width: 3,
+          ),
         ),
       ),
     );

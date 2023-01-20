@@ -85,8 +85,11 @@ class _ListingScreenState extends State<ListingScreen> {
                             if (!mounted) return;
                             await showSnackBar(
                               value: const Text('Go back ?'),
+                              duration: const Duration(seconds: 2),
                               action: SnackBarAction(
                                 label: 'OK',
+                                textColor:
+                                    Theme.of(context).brightness == Brightness.light ? Colors.white : Colors.black,
                                 onPressed: () {
                                   scollController.jumpTo(context.read<ListingScreenCubit>().state.scrollPosition);
                                 },
@@ -161,7 +164,7 @@ class _ListingScreenState extends State<ListingScreen> {
                                     );
                                   }),
                             title: Text(
-                              (listingState.subreddit ?? '').toTitleCase(),
+                              (listingState.subreddit ?? ''),
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: Theme.of(context).textTheme.bodyText1?.color,

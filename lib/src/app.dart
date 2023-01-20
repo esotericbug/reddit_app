@@ -3,6 +3,7 @@ import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:reddit_app/src/cubits/theme/theme_cubit.dart';
 import 'package:reddit_app/src/helpers/general.dart';
 import 'package:reddit_app/src/routes/routes.dart';
@@ -44,6 +45,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
       useMaterial3: true,
       lightIsWhite: true,
     );
+    // theme.copyWith(textTheme: GoogleFonts.robotoTextTheme(theme.textTheme));
     return theme;
   }
 
@@ -53,6 +55,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
       useMaterial3: true,
       darkIsTrueBlack: true,
     );
+    // theme.copyWith(textTheme: GoogleFonts.robotoTextTheme(theme.textTheme));
     return theme;
   }
 
@@ -69,9 +72,18 @@ class _AppState extends State<App> with WidgetsBindingObserver {
               scaffoldMessengerKey: snackbarKey,
               themeMode: themeState.selectedTheme,
               initialRoute: ListingScreen.routeName,
-              builder: (context, child) => ScrollConfiguration(
-                behavior: CustomScrollBehavior(),
-                child: child ?? const SizedBox.shrink(),
+              builder: EasyLoading.init(
+                builder: (context, child) {
+                  return ScrollConfiguration(
+                    behavior: CustomScrollBehavior(),
+                    child: GestureDetector(
+                      onTap: () {
+                        FocusManager.instance.primaryFocus?.unfocus();
+                      },
+                      child: child ?? const SizedBox.shrink(),
+                    ),
+                  );
+                },
               ),
               onGenerateRoute: RouteGenerator.generateRoute,
             );

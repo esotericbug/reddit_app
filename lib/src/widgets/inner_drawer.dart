@@ -72,9 +72,10 @@ class InnerDrawer extends StatefulWidget {
     this.rightEdgeDragWidth,
     super.key,
   }) {
-    leftEdgeDragWidth = leftEdgeDragWidth ?? (MediaQueryData.fromWindow(WidgetsBinding.instance.window).size.width / 6);
+    leftEdgeDragWidth =
+        leftEdgeDragWidth ?? (MediaQueryData.fromWindow(WidgetsBinding.instance.window).size.width / 10);
     rightEdgeDragWidth =
-        rightEdgeDragWidth ?? (MediaQueryData.fromWindow(WidgetsBinding.instance.window).size.width / 6);
+        rightEdgeDragWidth ?? (MediaQueryData.fromWindow(WidgetsBinding.instance.window).size.width / 10);
   }
 
   /// Left child

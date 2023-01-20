@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
@@ -13,6 +14,7 @@ import 'package:reddit_app/src/screens/link_detail_screen.dart';
 import 'package:reddit_app/src/screens/listing_screen.dart';
 import 'package:reddit_app/src/widgets/gallery_widget.dart';
 import 'package:reddit_app/src/widgets/video_player_widget.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class LinkCardWidget extends StatelessWidget {
   final String? subreddit;
@@ -25,11 +27,6 @@ class LinkCardWidget extends StatelessWidget {
     super.key,
   });
 
-  Future<void> _openURL(dynamic url) async {
-    final browser = ChromeSafariBrowser();
-    await browser.open(url: Uri.parse('$url'));
-  }
-
   String? get _createdAt {
     final dateCreatedSeconds = item?.data?.created?.toInt();
     if (dateCreatedSeconds == null) return '';
@@ -38,19 +35,19 @@ class LinkCardWidget extends StatelessWidget {
     final durationDiff = currentDate.difference(dateCreated);
 
     if (durationDiff.inDays ~/ 365 > 0) {
-      return '${durationDiff.inDays ~/ 365} years';
+      return '${durationDiff.inDays ~/ 365}y';
     } else if (durationDiff.inDays ~/ 30 > 0) {
-      return '${durationDiff.inDays ~/ 30} months';
+      return '${durationDiff.inDays ~/ 30}m';
     } else if (durationDiff.inDays ~/ 7 > 0) {
-      return '${durationDiff.inDays ~/ 7} weeks';
+      return '${durationDiff.inDays ~/ 7}w';
     } else if (durationDiff.inDays > 0) {
-      return '${durationDiff.inDays} days';
+      return '${durationDiff.inDays}d';
     } else if (durationDiff.inHours > 0) {
-      return '${durationDiff.inHours} hours';
+      return '${durationDiff.inHours}h';
     } else if (durationDiff.inMinutes > 0) {
-      return '${durationDiff.inMinutes} minutes';
+      return '${durationDiff.inMinutes}mins';
     } else if (durationDiff.inSeconds > 0) {
-      return '${durationDiff.inSeconds} seconds';
+      return '${durationDiff.inSeconds}secs';
     }
     return null;
   }
@@ -64,19 +61,19 @@ class LinkCardWidget extends StatelessWidget {
       final durationDiff = currentDate.difference(dateEdited);
 
       if (durationDiff.inDays ~/ 365 > 0) {
-        return '${durationDiff.inDays ~/ 365} years';
+        return '${durationDiff.inDays ~/ 365}y';
       } else if (durationDiff.inDays ~/ 30 > 0) {
-        return '${durationDiff.inDays ~/ 30} months';
+        return '${durationDiff.inDays ~/ 30}m';
       } else if (durationDiff.inDays ~/ 7 > 0) {
-        return '${durationDiff.inDays ~/ 7} weeks';
+        return '${durationDiff.inDays ~/ 7}w';
       } else if (durationDiff.inDays > 0) {
-        return '${durationDiff.inDays} days';
+        return '${durationDiff.inDays}d';
       } else if (durationDiff.inHours > 0) {
-        return '${durationDiff.inHours} hours';
+        return '${durationDiff.inHours}h';
       } else if (durationDiff.inMinutes > 0) {
-        return '${durationDiff.inMinutes} minutes';
+        return '${durationDiff.inMinutes}mins';
       } else if (durationDiff.inSeconds > 0) {
-        return '${durationDiff.inSeconds} seconds';
+        return '${durationDiff.inSeconds}secs';
       }
     }
     return null;
@@ -84,6 +81,17 @@ class LinkCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Future<void> openURL(dynamic url) async {
+      EasyLoading.show();
+      final browser = ChromeSafariBrowser();
+      if (await canLaunchUrlString(url)) {
+        await browser.open(url: Uri.parse('$url'));
+        EasyLoading.dismiss();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Not able to lauch URL.')));
+      }
+    }
+
     return Material(
       child: GestureDetector(
         onTap: () {
@@ -102,8 +110,10 @@ class LinkCardWidget extends StatelessWidget {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.max,
             children: [
               Row(
+                mainAxisSize: MainAxisSize.max,
                 children: [
                   if (subreddit?.toLowerCase() != item?.data?.subreddit?.toLowerCase())
                     const CircleAvatar(
@@ -116,6 +126,7 @@ class LinkCardWidget extends StatelessWidget {
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.max,
                       children: [
                         if (subreddit?.toLowerCase() != item?.data?.subreddit?.toLowerCase())
                           GestureDetector(
@@ -178,7 +189,7 @@ class LinkCardWidget extends StatelessWidget {
                                   ),
                                 ),
                                 TextSpan(
-                                  text: '$_createdAt ago',
+                                  text: '$_createdAt',
                                   style: TextStyle(
                                     color: Colors.grey.shade500,
                                     fontSize: 11,
@@ -196,7 +207,7 @@ class LinkCardWidget extends StatelessWidget {
                                   ),
                                 ),
                                 TextSpan(
-                                  text: '(last edited $_editedAt ago)',
+                                  text: '(last edited $_editedAt)',
                                   style: TextStyle(
                                     color: Colors.grey.shade500,
                                     fontSize: 11,
@@ -222,8 +233,45 @@ class LinkCardWidget extends StatelessWidget {
                                   ),
                                 ),
                               ],
+                              if (item?.data?.domain != null) ...[
+                                WidgetSpan(
+                                  alignment: PlaceholderAlignment.middle,
+                                  child: Icon(
+                                    MdiIcons.circleSmall,
+                                    size: 10,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: item?.data?.domain ?? '',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade500,
+                                    fontSize: 11,
+                                    height: 1,
+                                  ),
+                                ),
+                              ],
+                              if (bodyExpanded) ...[
+                                WidgetSpan(
+                                  alignment: PlaceholderAlignment.middle,
+                                  child: Icon(
+                                    MdiIcons.circleSmall,
+                                    size: 10,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: '${((item?.data?.upvoteRatio ?? 0) * 100).toInt()}% upvoted',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade500,
+                                    fontSize: 11,
+                                    height: 1,
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -257,48 +305,53 @@ class LinkCardWidget extends StatelessWidget {
                       ),
                 ),
                 onTapLink: (text, href, title) async {
-                  await _openURL(href);
+                  await openURL(href);
                   Dev.log(href);
                 },
               ),
               Builder(builder: (context) {
                 final redditMediaList = item?.data?.getImagesAndVideos;
                 final random = Random();
-                openGallery() {
-                  final galleryItems = redditMediaList
-                          ?.map(
-                            (media) => media.type == MediaType.image
-                                ? (media.url != null
-                                    ? ImageWithLoader(
-                                        media.url,
-                                        width: media.width,
-                                        height: media.height,
-                                        withCacheHeight: false,
-                                      )
-                                    : null)
-                                : (media.type == MediaType.video && media.url != null)
-                                    ? VideoPlayerWidget(
-                                        url: media.url.toString(),
-                                      )
-                                    : media.type == MediaType.embed
-                                        ? InAppWebView(
-                                            initialUrlRequest: URLRequest(url: Uri.parse('${media.url}')),
-                                          )
-                                        : null,
-                          )
-                          .whereType<Widget>()
-                          .toList() ??
-                      [];
-                  if (galleryItems.isNotEmpty) {
-                    context.pushTransparentRoute(
-                      Hero(
-                        transitionOnUserGestures: true,
-                        tag: random,
-                        child: GalleryWidget(
-                          children: galleryItems,
+                final isPostLink = item?.data?.postHint == 'link';
+                linkHandler() {
+                  if (isPostLink) {
+                    openURL(item?.data?.urlOverriddenByDest);
+                  } else {
+                    final galleryItems = redditMediaList
+                            ?.map(
+                              (media) => media.type == MediaType.image
+                                  ? (media.url != null
+                                      ? ImageWithLoader(
+                                          media.url,
+                                          width: media.width,
+                                          height: media.height,
+                                          withCacheHeight: false,
+                                        )
+                                      : null)
+                                  : (media.type == MediaType.video && media.url != null)
+                                      ? VideoPlayerWidget(
+                                          url: media.url.toString(),
+                                        )
+                                      : media.type == MediaType.embed
+                                          ? InAppWebView(
+                                              initialUrlRequest: URLRequest(url: Uri.parse('${media.url}')),
+                                            )
+                                          : null,
+                            )
+                            .whereType<Widget>()
+                            .toList() ??
+                        [];
+                    if (galleryItems.isNotEmpty) {
+                      context.pushTransparentRoute(
+                        Hero(
+                          transitionOnUserGestures: true,
+                          tag: random,
+                          child: GalleryWidget(
+                            children: galleryItems,
+                          ),
                         ),
-                      ),
-                    );
+                      );
+                    }
                   }
                 }
 
@@ -308,10 +361,10 @@ class LinkCardWidget extends StatelessWidget {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(15),
                       child: GestureDetector(
-                        onTap: openGallery,
+                        onTap: linkHandler,
                         child: Stack(
                           fit: StackFit.loose,
-                          alignment: Alignment.bottomRight,
+                          alignment: isPostLink ? Alignment.bottomCenter : Alignment.bottomRight,
                           children: [
                             Hero(
                               tag: random,
@@ -323,32 +376,39 @@ class LinkCardWidget extends StatelessWidget {
                               ),
                             ),
                             if (item?.data?.getPreviewImage?.url != null &&
-                                item!.data!.getPreviewImage!.url!.isNotEmpty)
+                                (item?.data?.getPreviewImage?.url?.isNotEmpty ?? true))
                               Container(
-                                margin: const EdgeInsets.all(7),
+                                margin: EdgeInsets.all(!isPostLink ? 7 : 0),
                                 padding: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
                                   color: Colors.black87.withOpacity(0.8),
                                   shape: BoxShape.rectangle,
-                                  borderRadius: BorderRadius.circular(5),
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 0.5,
-                                  ),
-                                ),
-                                child: Icon(
-                                  redditMediaList != null && redditMediaList.isNotEmpty
-                                      ? (redditMediaList.first.type == MediaType.gif
-                                          ? Icons.gif
-                                          : redditMediaList.first.type == MediaType.video
-                                              ? Icons.videocam_rounded
-                                              : redditMediaList.first.type == MediaType.embed
-                                                  ? Icons.link
-                                                  : Icons.image)
+                                  borderRadius: !isPostLink ? BorderRadius.circular(5) : null,
+                                  border: !isPostLink
+                                      ? Border.all(
+                                          color: Colors.white,
+                                          width: 0.5,
+                                        )
                                       : null,
-                                  size: 20,
-                                  color: Colors.white,
                                 ),
+                                child: isPostLink
+                                    ? Text(
+                                        item?.data?.urlOverriddenByDest ?? '',
+                                        style: const TextStyle(fontSize: 12),
+                                      )
+                                    : Icon(
+                                        redditMediaList != null && redditMediaList.isNotEmpty
+                                            ? (redditMediaList.first.type == MediaType.gif
+                                                ? Icons.gif
+                                                : redditMediaList.first.type == MediaType.video
+                                                    ? Icons.videocam_rounded
+                                                    : redditMediaList.first.type == MediaType.embed
+                                                        ? Icons.link
+                                                        : Icons.image)
+                                            : null,
+                                        size: 20,
+                                        color: Colors.white,
+                                      ),
                               )
                           ],
                         ),
@@ -363,8 +423,8 @@ class LinkCardWidget extends StatelessWidget {
                   GestureDetector(
                     onTap: () {},
                     child: Container(
-                      margin: const EdgeInsets.all(3),
-                      padding: const EdgeInsets.all(2),
+                      margin: const EdgeInsets.all(1),
+                      padding: const EdgeInsets.all(1),
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: Colors.grey.shade800,
@@ -377,9 +437,12 @@ class LinkCardWidget extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                             onTap: () {},
                             child: const Padding(
-                              padding: EdgeInsets.all(2),
+                              padding: EdgeInsets.all(1),
                               child: Icon(Icons.expand_less),
                             ),
+                          ),
+                          const SizedBox(
+                            width: 2,
                           ),
                           Text(
                             NumberFormat.compactCurrency(
@@ -387,12 +450,16 @@ class LinkCardWidget extends StatelessWidget {
                               locale: 'en_US',
                               symbol: '',
                             ).format(item?.data?.score ?? 0),
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                          const SizedBox(
+                            width: 2,
                           ),
                           InkWell(
                             borderRadius: BorderRadius.circular(20),
                             onTap: () {},
                             child: const Padding(
-                              padding: EdgeInsets.all(2),
+                              padding: EdgeInsets.all(1),
                               child: Icon(Icons.expand_more),
                             ),
                           ),
@@ -409,20 +476,24 @@ class LinkCardWidget extends StatelessWidget {
                     ),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(7),
-                      onTap: !bodyExpanded
-                          ? () {
-                              Navigator.maybeOf(context)?.pushNamed(LinkDetailScreen.routeName, arguments: {
-                                'item': item,
-                              });
-                            }
-                          : () {},
+                      onTap: () {
+                        if (!bodyExpanded) {
+                          Navigator.maybeOf(context)?.pushNamed(LinkDetailScreen.routeName, arguments: {
+                            'item': item,
+                          });
+                        }
+                      },
                       child: Padding(
-                        padding: const EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(5),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             const Icon(
                               Icons.forum_outlined,
+                              size: 18,
+                            ),
+                            const SizedBox(
+                              width: 2,
                             ),
                             Padding(
                               padding: const EdgeInsets.only(left: 7),
@@ -432,6 +503,7 @@ class LinkCardWidget extends StatelessWidget {
                                   locale: 'en_US',
                                   symbol: '',
                                 ).format(item?.data?.numComments ?? 0),
+                                style: const TextStyle(fontSize: 11),
                               ),
                             ),
                           ],

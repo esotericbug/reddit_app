@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:reddit_app/src/blocs/drawer_search/drawer_search_bloc.dart';
+import 'package:reddit_app/src/cubits/link_detail_data/link_detail_data_cubit.dart';
 import 'package:reddit_app/src/cubits/listing/listing_cubit.dart';
 import 'package:reddit_app/src/cubits/listing_screen/listing_screen_cubit.dart';
 import 'package:reddit_app/src/screens/link_detail_screen.dart';
@@ -44,14 +45,25 @@ class RouteGenerator {
               }
             case LinkDetailScreen.routeName:
               {
-                final arguments = routeSettings.arguments;
-                if (arguments != null) {
-                  final args = arguments as Map<String, dynamic>;
-                  return LinkDetailScreen(
-                    item: args['item'],
-                  );
-                }
-                return const LinkDetailScreen();
+                return MultiBlocProvider(
+                  providers: [
+                    BlocProvider(
+                      create: (context) => LinkDetailDataCubit(),
+                    ),
+                  ],
+                  child: Builder(
+                    builder: (context) {
+                      final arguments = routeSettings.arguments;
+                      if (arguments != null) {
+                        final args = arguments as Map<String, dynamic>;
+                        return LinkDetailScreen(
+                          item: args['item'],
+                        );
+                      }
+                      return const LinkDetailScreen();
+                    },
+                  ),
+                );
               }
             default:
               return const ErrorRoute();
