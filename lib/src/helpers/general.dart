@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer' as dev;
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -6,7 +7,7 @@ import 'package:html/parser.dart' as htmlparser;
 final GlobalKey<ScaffoldMessengerState> snackbarKey = GlobalKey<ScaffoldMessengerState>();
 
 class Dev {
-  static log([dynamic value]) => dev.log('$value');
+  static log([dynamic value, dynamic value1]) => dev.log('$value ${value1 ?? ''}');
 }
 
 class AddBorder extends StatelessWidget {
@@ -30,7 +31,7 @@ String sanitize(String s) => s.replaceAllMapped(
       (Match m) => String.fromCharCode(int.parse(m.group(1)!, radix: 16)),
     );
 
-String parseHTMLToString(String? value) => '${htmlparser.parse(value).documentElement?.text}';
+String parseHTMLToString(String? value) => '${htmlparser.parse((value) ?? '').documentElement?.text}';
 
 MarkdownStyleSheet markdownDefaultTheme(BuildContext context) => MarkdownStyleSheet.fromTheme(
       Theme.of(context),
@@ -154,10 +155,13 @@ class ImageWithLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (url == null || (url?.isEmpty ?? true)) {
+      return const SizedBox.shrink();
+    }
     return LayoutBuilder(
       builder: (context, contraints) {
         return AspectRatio(
-          aspectRatio: (width?.toDouble() ?? 1) / (height?.toDouble() ?? 1),
+          aspectRatio: ((width ?? 1).toDouble()) / ((height ?? 1).toDouble()),
           child: Image.network(
             '$url',
             fit: BoxFit.contain,
@@ -180,4 +184,9 @@ String getFormattedDuration(Duration duration) {
   String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
   String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60), padLeft: 2);
   return "${duration.inHours != 0 ? '$twoDigitHours:' : ''}$twoDigitMinutes:$twoDigitSeconds";
+}
+
+String utf8convert(String text) {
+  List<int> bytes = text.toString().codeUnits;
+  return utf8.decode(bytes);
 }

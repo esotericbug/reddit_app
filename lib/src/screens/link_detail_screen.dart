@@ -74,7 +74,6 @@ class LinkDetailScreen extends StatelessWidget {
                     ),
                   );
                 },
-                childCount: 100000,
               ),
             ),
           ],

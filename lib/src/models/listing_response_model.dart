@@ -5,6 +5,9 @@
 
 import 'dart:convert';
 
+import 'package:collection/collection.dart';
+import 'package:reddit_app/src/helpers/enums.dart';
+
 class ListingResponse {
   ListingResponse({
     this.kind,
@@ -234,7 +237,7 @@ class LinkData {
   String? name;
   bool? quarantine;
   String? linkFlairTextColor;
-  double? upvoteRatio;
+  num? upvoteRatio;
   String? authorFlairBackgroundColor;
   String? subredditType;
   num? ups;
@@ -248,7 +251,7 @@ class LinkData {
   bool? isRedditMediaDomain;
   bool? isMeta;
   dynamic category;
-  Gildings? secureMediaEmbed;
+  MediaEmbed? secureMediaEmbed;
   String? linkFlairText;
   bool? canModPost;
   num? score;
@@ -355,7 +358,7 @@ class LinkData {
         name: json["name"],
         quarantine: json["quarantine"],
         linkFlairTextColor: json["link_flair_text_color"],
-        upvoteRatio: json["upvote_ratio"].toDouble(),
+        upvoteRatio: json["upvote_ratio"] as num,
         authorFlairBackgroundColor: json["author_flair_background_color"],
         subredditType: json["subreddit_type"],
         ups: json["ups"],
@@ -369,7 +372,7 @@ class LinkData {
         isRedditMediaDomain: json["is_reddit_media_domain"],
         isMeta: json["is_meta"],
         category: json["category"],
-        secureMediaEmbed: json["secure_media_embed"] == null ? null : Gildings.fromMap(json["secure_media_embed"]),
+        secureMediaEmbed: json["secure_media_embed"] == null ? null : MediaEmbed.fromMap(json["secure_media_embed"]),
         linkFlairText: json["link_flair_text"],
         canModPost: json["can_mod_post"],
         score: json["score"],
@@ -597,8 +600,8 @@ class LinkData {
           mediaMetadata)?[(crossLinkData?.galleryData ?? galleryData)?.items?.first.mediaId];
       return RedditMedia(
         url: mediaDatum?.s?.u,
-        width: mediaDatum!.s?.x,
-        height: mediaDatum.s?.y,
+        width: mediaDatum?.s?.x,
+        height: mediaDatum?.s?.y,
       );
     } else {
       return null;
@@ -613,7 +616,7 @@ class LinkData {
       crossLinkData = crosspostParentList?.first;
     }
 
-    if ((crossLinkData?.media ?? media) != null) {
+    if ((crossLinkData?.media ?? media)?.redditVideo != null) {
       data.add(
         RedditMedia(
           url: (crossLinkData?.media ?? media)?.redditVideo?.hlsUrl,
@@ -660,8 +663,31 @@ class LinkData {
       );
     }
 
+    if ((crossLinkData?.preview ?? preview)?.redditVideoPreview != null) {
+      data.add(
+        RedditMedia(
+          url: (crossLinkData?.preview ?? preview)?.redditVideoPreview?.hlsUrl,
+          width: (crossLinkData?.preview ?? preview)?.redditVideoPreview?.width,
+          height: (crossLinkData?.preview ?? preview)?.redditVideoPreview?.height,
+          type: MediaType.video,
+        ),
+      );
+    }
+
+    // if ((crossLinkData?.secureMediaEmbed ?? secureMediaEmbed)?.mediaDomainUrl != null) {
+    //   // Dev.log((crossLinkData?.secureMediaEmbed ?? secureMediaEmbed)?.mediaDomainUrl);
+    //   data.add(
+    //     RedditMedia(
+    //       url: (crossLinkData?.secureMediaEmbed ?? secureMediaEmbed)?.mediaDomainUrl,
+    //       width: (crossLinkData?.secureMediaEmbed ?? secureMediaEmbed)?.width,
+    //       height: (crossLinkData?.secureMediaEmbed ?? secureMediaEmbed)?.height,
+    //       type: MediaType.embed,
+    //     ),
+    //   );
+    // }
+
     if (data.isEmpty) {
-      if ((crossLinkData?.preview ?? preview) != null && (crossLinkData?.preview ?? preview)?.images != null) {
+      if ((crossLinkData?.preview ?? preview) != null && (crossLinkData?.preview ?? preview)!.images!.isNotEmpty) {
         (crossLinkData?.preview ?? preview)?.images?.forEach((image) {
           data.add(
             RedditMedia(
@@ -674,6 +700,10 @@ class LinkData {
         });
       }
     }
+
+    // data.forEach((element) {
+    //   Dev.log(element.toJson());
+    // });
 
     return data;
   }
@@ -1061,10 +1091,12 @@ class S {
 class Preview {
   Preview({
     this.images,
+    this.redditVideoPreview,
     this.enabled,
   });
 
   List<RedditImage>? images;
+  final RedditVideoPreview? redditVideoPreview;
   bool? enabled;
 
   factory Preview.fromJson(String str) => Preview.fromMap(json.decode(str));
@@ -1074,11 +1106,14 @@ class Preview {
   factory Preview.fromMap(Map<String, dynamic> json) => Preview(
         images:
             json["images"] == null ? null : List<RedditImage>.from(json["images"].map((x) => RedditImage.fromMap(x))),
+        redditVideoPreview:
+            json["reddit_video_preview"] == null ? null : RedditVideoPreview.fromMap(json['reddit_video_preview']),
         enabled: json["enabled"],
       );
 
   Map<String, dynamic> toMap() => {
         "images": images == null ? null : List<dynamic>.from(images!.map((x) => x.toMap())),
+        "reddit_video_preview": redditVideoPreview?.toMap(),
         "enabled": enabled,
       };
 }
@@ -1179,6 +1214,118 @@ class RedditMedia {
     this.height,
     this.type,
   });
+
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'url': url,
+      'width': width,
+      'height': height,
+      'type': type?.name,
+    };
+  }
+
+  factory RedditMedia.fromMap(Map<String, dynamic> map) {
+    return RedditMedia(
+      url: map['url'] != null ? map['url'] as String : null,
+      width: map['width'] != null ? map['width'] as num : null,
+      height: map['height'] != null ? map['height'] as num : null,
+      type: MediaType.values.firstWhereOrNull((element) => element.name == map['type']),
+    );
+  }
+
+  String toJson() => json.encode(toMap());
+
+  factory RedditMedia.fromJson(String source) => RedditMedia.fromMap(json.decode(source) as Map<String, dynamic>);
 }
 
-enum MediaType { video, image, gif }
+class RedditVideoPreview {
+  RedditVideoPreview({
+    this.bitrateKbps,
+    this.fallbackUrl,
+    this.height,
+    this.width,
+    this.scrubberMediaUrl,
+    this.dashUrl,
+    this.duration,
+    this.hlsUrl,
+    this.isGif,
+    this.transcodingStatus,
+  });
+
+  final int? bitrateKbps;
+  final String? fallbackUrl;
+  final int? height;
+  final int? width;
+  final String? scrubberMediaUrl;
+  final String? dashUrl;
+  final int? duration;
+  final String? hlsUrl;
+  final bool? isGif;
+  final String? transcodingStatus;
+
+  factory RedditVideoPreview.fromJson(String str) => RedditVideoPreview.fromMap(json.decode(str));
+
+  String toJson() => json.encode(toMap());
+
+  factory RedditVideoPreview.fromMap(Map<String, dynamic> json) => RedditVideoPreview(
+        bitrateKbps: json["bitrate_kbps"],
+        fallbackUrl: json["fallback_url"],
+        height: json["height"],
+        width: json["width"],
+        scrubberMediaUrl: json["scrubber_media_url"],
+        dashUrl: json["dash_url"],
+        duration: json["duration"],
+        hlsUrl: json["hls_url"],
+        isGif: json["is_gif"],
+        transcodingStatus: json["transcoding_status"],
+      );
+
+  Map<String, dynamic> toMap() => {
+        "bitrate_kbps": bitrateKbps,
+        "fallback_url": fallbackUrl,
+        "height": height,
+        "width": width,
+        "scrubber_media_url": scrubberMediaUrl,
+        "dash_url": dashUrl,
+        "duration": duration,
+        "hls_url": hlsUrl,
+        "is_gif": isGif,
+        "transcoding_status": transcodingStatus,
+      };
+}
+
+class MediaEmbed {
+  MediaEmbed({
+    this.content,
+    this.width,
+    this.scrolling,
+    this.height,
+    this.mediaDomainUrl,
+  });
+
+  final String? content;
+  final int? width;
+  final bool? scrolling;
+  final int? height;
+  final String? mediaDomainUrl;
+
+  factory MediaEmbed.fromJson(String str) => MediaEmbed.fromMap(json.decode(str));
+
+  String toJson() => json.encode(toMap());
+
+  factory MediaEmbed.fromMap(Map<String, dynamic> json) => MediaEmbed(
+        content: json["content"],
+        width: json["width"],
+        scrolling: json["scrolling"],
+        height: json["height"],
+        mediaDomainUrl: json["media_domain_url"],
+      );
+
+  Map<String, dynamic> toMap() => {
+        "content": content,
+        "width": width,
+        "scrolling": scrolling,
+        "height": height,
+        "media_domain_url": mediaDomainUrl,
+      };
+}

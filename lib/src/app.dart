@@ -34,10 +34,26 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   @override
   void didChangePlatformBrightness() {
     final brightness = SchedulerBinding.instance.platformDispatcher.platformBrightness;
-    context.read<ThemeCubit>().onThemeChange(
-          brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light,
-        );
+    context.read<ThemeCubit>().onThemeChange(brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light);
     super.didChangePlatformBrightness();
+  }
+
+  ThemeData lightTheme(ColorScheme? lightDynamic) {
+    final theme = FlexThemeData.light(
+      colorScheme: lightDynamic,
+      useMaterial3: true,
+      lightIsWhite: true,
+    );
+    return theme;
+  }
+
+  ThemeData darkTheme(ColorScheme? darkDynamic) {
+    final theme = FlexThemeData.dark(
+      colorScheme: darkDynamic,
+      useMaterial3: true,
+      darkIsTrueBlack: true,
+    );
+    return theme;
   }
 
   @override
@@ -48,26 +64,14 @@ class _AppState extends State<App> with WidgetsBindingObserver {
           builder: (context, themeState) {
             return MaterialApp(
               debugShowCheckedModeBanner: false,
-              theme: FlexThemeData.light(
-                colorScheme: lightDynamic,
-                useMaterial3: true,
-                lightIsWhite: true,
-              ),
-              darkTheme: FlexThemeData.dark(
-                colorScheme: darkDynamic,
-                useMaterial3: true,
-                darkIsTrueBlack: true,
-              ),
+              theme: lightTheme(lightDynamic),
+              darkTheme: darkTheme(darkDynamic),
               scaffoldMessengerKey: snackbarKey,
               themeMode: themeState.selectedTheme,
               initialRoute: ListingScreen.routeName,
               builder: (context, child) => ScrollConfiguration(
                 behavior: CustomScrollBehavior(),
-                child: GestureDetector(
-                    onTap: () {
-                      FocusManager.instance.primaryFocus?.unfocus();
-                    },
-                    child: child ?? const SizedBox.shrink()),
+                child: child ?? const SizedBox.shrink(),
               ),
               onGenerateRoute: RouteGenerator.generateRoute,
             );

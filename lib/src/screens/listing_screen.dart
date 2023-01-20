@@ -122,7 +122,7 @@ class _ListingScreenState extends State<ListingScreen> {
                 onRefresh: () => context.read<ListingCubit>().fetchInitial(subreddit: widget.subreddit),
                 child: Builder(
                   builder: (context) {
-                    if (listingState.isFetching && listingState.children == null || listingState.children!.isEmpty) {
+                    if (listingState.isFetching && (listingState.children?.isEmpty ?? true)) {
                       return const Padding(
                         padding: EdgeInsets.only(top: 50),
                         child: Center(
@@ -133,7 +133,7 @@ class _ListingScreenState extends State<ListingScreen> {
                     return CustomScrollView(
                       controller: scollController,
                       slivers: [
-                        if (listingState.isFetching && listingState.children == null || listingState.children!.isEmpty)
+                        if (listingState.isFetching && (listingState.children?.isEmpty ?? true))
                           const SliverToBoxAdapter(
                             child: Padding(
                               padding: EdgeInsets.only(top: 50),
@@ -161,7 +161,7 @@ class _ListingScreenState extends State<ListingScreen> {
                                     );
                                   }),
                             title: Text(
-                              '${listingState.subreddit?.toTitleCase()}',
+                              (listingState.subreddit ?? '').toTitleCase(),
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: Theme.of(context).textTheme.bodyText1?.color,
@@ -199,30 +199,32 @@ class _ListingScreenState extends State<ListingScreen> {
                               ),
                             ],
                           ),
-                          SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                                if (index == listingState.children!.length) {
-                                  if (listingState.isFetching &&
-                                      listingState.children != null &&
-                                      listingState.children!.isNotEmpty) {
-                                    return const Center(
-                                      child: RefreshProgressIndicator(),
-                                    );
-                                  } else {
-                                    context.read<ListingCubit>().fetchMore(subreddit: widget.subreddit);
-                                    return const SizedBox();
+                          if (!listingState.isFetching && listingState.error != null)
+                            SliverToBoxAdapter(
+                                child: Text('${listingState.error?.message}\nCode: ${listingState.error?.error}'))
+                          else
+                            SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  if (index == listingState.children?.length) {
+                                    if (listingState.isFetching && (listingState.children?.isNotEmpty ?? true)) {
+                                      return const Center(
+                                        child: RefreshProgressIndicator(),
+                                      );
+                                    } else {
+                                      context.read<ListingCubit>().fetchMore(subreddit: widget.subreddit);
+                                      return const SizedBox();
+                                    }
                                   }
-                                }
-                                final item = listingState.children?[index];
-                                return LinkCardWidget(
-                                  item: item,
-                                  subreddit: listingState.subreddit,
-                                );
-                              },
-                              childCount: listingState.children!.length + 1,
-                            ),
-                          )
+                                  final item = listingState.children?[index];
+                                  return LinkCardWidget(
+                                    item: item,
+                                    subreddit: listingState.subreddit,
+                                  );
+                                },
+                                childCount: (listingState.children?.length ?? 0) + 1,
+                              ),
+                            )
                         ]
                       ],
                     );
