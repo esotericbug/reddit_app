@@ -93,10 +93,10 @@ packages:
     dependency: "direct main"
     description:
       name: dismissible_page
-      sha256: "01a00c6cb630cfd0740b6cbdbbeb1bad0c68bddfcfc71b8662d6ff2b5a0929fa"
+      sha256: "5cec709b6a8dc517382640ed2c62edfa4e8d566901ef4fa48c941e999ca39cb5"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.3"
+    version: "1.0.1"
   dynamic_color:
     dependency: "direct main"
     description:
