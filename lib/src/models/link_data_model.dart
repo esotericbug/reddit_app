@@ -206,7 +206,7 @@ class Comment {
   final String? subreddit;
   final dynamic authorFlairTemplateId;
   final dynamic likes;
-  final LinkCommentResponseData? replies;
+  final LinkCommentResponse? replies;
   final List<dynamic>? userReports;
   final bool? saved;
   final String? id;
@@ -284,8 +284,7 @@ class Comment {
         subreddit: json["subreddit"],
         authorFlairTemplateId: json["author_flair_template_id"],
         likes: json["likes"],
-        replies:
-            json["replies"] == null || json["replies"] == "" ? null : LinkCommentResponseData.fromMap(json["replies"]),
+        replies: json["replies"] == null || json["replies"] == "" ? null : LinkCommentResponse.fromMap(json["replies"]),
         userReports: json["user_reports"] == null ? [] : List<dynamic>.from(json["user_reports"]!.map((x) => x)),
         saved: json["saved"],
         id: json["id"],

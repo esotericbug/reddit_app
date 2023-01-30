@@ -167,7 +167,7 @@ class _ListingScreenState extends State<ListingScreen> {
                               (listingState.subreddit ?? ''),
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: Theme.of(context).textTheme.bodyText1?.color,
+                                color: Theme.of(context).textTheme.bodyLarge?.color,
                                 fontSize: 20,
                               ),
                             ),

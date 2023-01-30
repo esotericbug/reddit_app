@@ -88,7 +88,9 @@ class LinkCardWidget extends StatelessWidget {
         await browser.open(url: Uri.parse('$url'));
         EasyLoading.dismiss();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Not able to lauch URL.')));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Not able to lauch URL.')));
+        }
       }
     }
 
@@ -283,10 +285,10 @@ class LinkCardWidget extends StatelessWidget {
               ),
               MarkdownBody(
                 styleSheet: markdownDefaultTheme(context).copyWith(
-                  p: Theme.of(context).textTheme.bodyText1?.copyWith(
+                  p: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        height: 1.1,
+                        height: 1.15,
                       ),
                 ),
                 data: parseHTMLToString(item?.data?.title),
@@ -299,23 +301,22 @@ class LinkCardWidget extends StatelessWidget {
                     ? '${parseHTMLToString(item?.data?.selftext).substring(0, 250)}...'
                     : parseHTMLToString(item?.data?.selftext),
                 styleSheet: markdownDefaultTheme(context).copyWith(
-                  p: Theme.of(context).textTheme.bodyText1?.copyWith(
+                  p: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         fontSize: 12,
-                        height: 1.1,
+                        height: 1.15,
                       ),
                 ),
                 onTapLink: (text, href, title) async {
                   await openURL(href);
-                  Dev.log(href);
                 },
               ),
               Builder(builder: (context) {
                 final redditMediaList = item?.data?.getImagesAndVideos;
                 final random = Random();
                 final isPostLink = item?.data?.postHint == 'link';
-                linkHandler() {
+                Future<void> linkHandler() async {
                   if (isPostLink) {
-                    openURL(item?.data?.urlOverriddenByDest);
+                    await openURL(item?.data?.urlOverriddenByDest);
                   } else {
                     final galleryItems = redditMediaList
                             ?.map(
@@ -342,7 +343,7 @@ class LinkCardWidget extends StatelessWidget {
                             .toList() ??
                         [];
                     if (galleryItems.isNotEmpty) {
-                      context.pushTransparentRoute(
+                      await context.pushTransparentRoute(
                         Hero(
                           transitionOnUserGestures: true,
                           tag: random,
@@ -361,7 +362,9 @@ class LinkCardWidget extends StatelessWidget {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(15),
                       child: GestureDetector(
-                        onTap: linkHandler,
+                        onTap: () async {
+                          await linkHandler();
+                        },
                         child: Stack(
                           fit: StackFit.loose,
                           alignment: isPostLink ? Alignment.bottomCenter : Alignment.bottomRight,
@@ -392,9 +395,14 @@ class LinkCardWidget extends StatelessWidget {
                                       : null,
                                 ),
                                 child: isPostLink
-                                    ? Text(
-                                        item?.data?.urlOverriddenByDest ?? '',
-                                        style: const TextStyle(fontSize: 12),
+                                    ? Center(
+                                        child: Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            item?.data?.urlOverriddenByDest ?? '',
+                                            style: const TextStyle(fontSize: 12),
+                                          ),
+                                        ),
                                       )
                                     : Icon(
                                         redditMediaList != null && redditMediaList.isNotEmpty

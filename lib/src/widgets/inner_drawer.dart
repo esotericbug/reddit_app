@@ -636,7 +636,7 @@ class InnerDrawerState extends State<InnerDrawer> with SingleTickerProviderState
       child: Container(
         decoration: widget.backgroundDecoration ??
             BoxDecoration(
-              color: Theme.of(context).backgroundColor,
+              color: Theme.of(context).colorScheme.background,
             ),
         child: Stack(
           alignment: _drawerInnerAlignment!,

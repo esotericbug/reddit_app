@@ -14,6 +14,7 @@ class LinkDetailDataCubit extends Cubit<LinkDetailDataState> {
     try {
       final rawResponse = await http().get('/r/$subreddit/comments/$article.json');
       final response = LinkDetailResponse.fromJson(rawResponse.data);
+      // Dev.log(response.commentData?.data?.toJson());
       if (isClosed) return;
       emit(
         state.copyWith(
