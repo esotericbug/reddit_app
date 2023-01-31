@@ -314,42 +314,50 @@ class LinkCardWidget extends StatelessWidget {
                 final redditMediaList = item?.data?.getImagesAndVideos;
                 final random = Random();
                 final isPostLink = item?.data?.postHint == 'link';
+                OverlayEntry? popupDialog;
+
+                final galleryItems = redditMediaList
+                        ?.map(
+                          (media) => media.type == MediaType.image
+                              ? (media.url != null
+                                  ? ImageWithLoader(
+                                      media.url,
+                                      width: media.width,
+                                      height: media.height,
+                                      withCacheHeight: false,
+                                    )
+                                  : null)
+                              : (media.type == MediaType.video && media.url != null)
+                                  ? VideoPlayerWidget(
+                                      url: media.url.toString(),
+                                    )
+                                  : media.type == MediaType.embed
+                                      ? InAppWebView(
+                                          initialUrlRequest: URLRequest(url: Uri.parse('${media.url}')),
+                                        )
+                                      : null,
+                        )
+                        .whereType<Widget>()
+                        .toList() ??
+                    [];
+
+                void createPopupDialog(Widget child) {
+                  popupDialog = OverlayEntry(builder: (context) => child);
+                  if (popupDialog != null) {
+                    Overlay.of(context).insert(popupDialog!);
+                  }
+                }
+
                 Future<void> linkHandler() async {
                   if (isPostLink) {
                     await openURL(item?.data?.urlOverriddenByDest);
                   } else {
-                    final galleryItems = redditMediaList
-                            ?.map(
-                              (media) => media.type == MediaType.image
-                                  ? (media.url != null
-                                      ? ImageWithLoader(
-                                          media.url,
-                                          width: media.width,
-                                          height: media.height,
-                                          withCacheHeight: false,
-                                        )
-                                      : null)
-                                  : (media.type == MediaType.video && media.url != null)
-                                      ? VideoPlayerWidget(
-                                          url: media.url.toString(),
-                                        )
-                                      : media.type == MediaType.embed
-                                          ? InAppWebView(
-                                              initialUrlRequest: URLRequest(url: Uri.parse('${media.url}')),
-                                            )
-                                          : null,
-                            )
-                            .whereType<Widget>()
-                            .toList() ??
-                        [];
                     if (galleryItems.isNotEmpty) {
                       await context.pushTransparentRoute(
                         Hero(
                           transitionOnUserGestures: true,
                           tag: random,
-                          child: GalleryWidget(
-                            children: galleryItems,
-                          ),
+                          child: GalleryWidget(children: galleryItems),
                         ),
                       );
                     }
@@ -362,6 +370,18 @@ class LinkCardWidget extends StatelessWidget {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(15),
                       child: GestureDetector(
+                        onLongPressStart: (_) {
+                          createPopupDialog(
+                            Hero(
+                              transitionOnUserGestures: true,
+                              tag: random,
+                              child: GalleryWidget(children: galleryItems),
+                            ),
+                          );
+                        },
+                        onLongPressEnd: (_) {
+                          popupDialog?.remove();
+                        },
                         onTap: () async {
                           await linkHandler();
                         },
@@ -475,6 +495,7 @@ class LinkCardWidget extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 5),
                   Container(
                     decoration: BoxDecoration(
                       border: Border.all(
@@ -526,53 +547,5 @@ class LinkCardWidget extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class EmojiText extends StatelessWidget {
-  const EmojiText({
-    Key? key,
-    required this.text,
-  }) : super(key: key);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return RichText(
-      text: _buildText(text),
-    );
-  }
-
-  TextSpan _buildText(String text) {
-    final children = <TextSpan>[];
-    final runes = text.runes;
-
-    for (int i = 0; i < runes.length; /* empty */) {
-      int current = runes.elementAt(i);
-
-      // we assume that everything that is not
-      // in Extended-ASCII set is an emoji...
-      final isEmoji = current > 255;
-      final shouldBreak = isEmoji ? (x) => x <= 255 : (x) => x > 255;
-
-      final chunk = <int>[];
-      while (!shouldBreak(current)) {
-        chunk.add(current);
-        if (++i >= runes.length) break;
-        current = runes.elementAt(i);
-      }
-
-      children.add(
-        TextSpan(
-          text: String.fromCharCodes(chunk),
-          style: TextStyle(
-            fontFamily: isEmoji ? 'EmojiOne' : null,
-          ),
-        ),
-      );
-    }
-
-    return TextSpan(children: children);
   }
 }

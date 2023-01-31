@@ -254,6 +254,7 @@ class _CommentWidgetState extends State<CommentWidget> with SingleTickerProvider
 
     return GestureDetector(
       onTap: () async => await _toggleContainer(),
+      behavior: HitTestBehavior.opaque,
       child: Container(
         margin: const EdgeInsets.all(5),
         child: Column(
