@@ -12,8 +12,8 @@ import 'package:reddit_app/src/helpers/general.dart';
 import 'package:reddit_app/src/models/listing_response_model.dart';
 import 'package:reddit_app/src/screens/link_detail_screen.dart';
 import 'package:reddit_app/src/screens/listing_screen.dart';
+import 'package:reddit_app/src/utils/metadata_fetch/metadata_fetch.dart';
 import 'package:reddit_app/src/widgets/gallery_widget.dart';
-import 'package:reddit_app/src/widgets/video_player_widget.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 class LinkCardWidget extends StatelessWidget {
@@ -122,160 +122,163 @@ class LinkCardWidget extends StatelessWidget {
                       radius: 15,
                       child: Text('r'),
                     ),
-                  Padding(
-                    padding: EdgeInsets.only(
-                      left: subreddit?.toLowerCase() != item?.data?.subreddit?.toLowerCase() ? 7 : 0,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.max,
-                      children: [
-                        if (subreddit?.toLowerCase() != item?.data?.subreddit?.toLowerCase())
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.of(context).pushNamed(ListingScreen.routeName, arguments: {
-                                'subreddit': item?.data?.subreddit,
-                              });
-                            },
-                            child: Text.rich(
-                              TextSpan(
-                                children: [
-                                  const TextSpan(
-                                    text: 'r/',
-                                    style: TextStyle(
-                                      height: 1,
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: subreddit?.toLowerCase() != item?.data?.subreddit?.toLowerCase() ? 7 : 0,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.max,
+                        children: [
+                          if (subreddit?.toLowerCase() != item?.data?.subreddit?.toLowerCase())
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).pushNamed(ListingScreen.routeName, arguments: {
+                                  'subreddit': item?.data?.subreddit,
+                                });
+                              },
+                              child: Text.rich(
+                                TextSpan(
+                                  children: [
+                                    const TextSpan(
+                                      text: 'r/',
+                                      style: TextStyle(
+                                        height: 1,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: '${item?.data?.subreddit}',
+                                      style: TextStyle(
+                                        color: Theme.of(context).primaryColorLight,
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 14,
+                                        height: 1,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          const SizedBox(
+                            height: 2,
+                          ),
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: 'u/'.useCorrectEllipsis(),
+                                  style: TextStyle(
+                                    color: Colors.grey.shade500,
+                                    fontSize: 11,
+                                    height: 1,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: '${item?.data?.author}'.useCorrectEllipsis(),
+                                  style: TextStyle(
+                                    color: Colors.grey.shade500,
+                                    fontSize: 11,
+                                    height: 1,
+                                  ),
+                                ),
+                                if (_createdAt != null) ...[
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.middle,
+                                    child: Icon(
+                                      MdiIcons.circleSmall,
+                                      size: 10,
+                                      color: Colors.grey.shade500,
                                     ),
                                   ),
                                   TextSpan(
-                                    text: '${item?.data?.subreddit}',
+                                    text: '$_createdAt'.useCorrectEllipsis(),
                                     style: TextStyle(
-                                      color: Theme.of(context).primaryColorLight,
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 14,
+                                      color: Colors.grey.shade500,
+                                      fontSize: 11,
                                       height: 1,
                                     ),
                                   ),
                                 ],
-                              ),
+                                if (_editedAt != null) ...[
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.middle,
+                                    child: Icon(
+                                      MdiIcons.circleSmall,
+                                      size: 10,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: '(last edited $_editedAt)'.useCorrectEllipsis(),
+                                    style: TextStyle(
+                                      color: Colors.grey.shade500,
+                                      fontSize: 11,
+                                      height: 1,
+                                    ),
+                                  ),
+                                ],
+                                if (item?.data?.over18 == true) ...[
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.middle,
+                                    child: Icon(
+                                      MdiIcons.circleSmall,
+                                      size: 10,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: 'NSFW'.useCorrectEllipsis(),
+                                    style: const TextStyle(
+                                      color: Colors.red,
+                                      fontSize: 11,
+                                      height: 1,
+                                    ),
+                                  ),
+                                ],
+                                if (item?.data?.domain != null) ...[
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.middle,
+                                    child: Icon(
+                                      MdiIcons.circleSmall,
+                                      size: 10,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: (item?.data?.domain ?? '').useCorrectEllipsis(),
+                                    style: TextStyle(
+                                      color: Colors.grey.shade500,
+                                      fontSize: 11,
+                                      height: 1,
+                                    ),
+                                  ),
+                                ],
+                                if (bodyExpanded) ...[
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.middle,
+                                    child: Icon(
+                                      MdiIcons.circleSmall,
+                                      size: 10,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: '${((item?.data?.upvoteRatio ?? 0) * 100).toInt()}% upvoted'
+                                        .useCorrectEllipsis(),
+                                    style: TextStyle(
+                                      color: Colors.grey.shade500,
+                                      fontSize: 11,
+                                      height: 1,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        const SizedBox(
-                          height: 2,
-                        ),
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: 'u/',
-                                style: TextStyle(
-                                  color: Colors.grey.shade500,
-                                  fontSize: 11,
-                                  height: 1,
-                                ),
-                              ),
-                              TextSpan(
-                                text: '${item?.data?.author}',
-                                style: TextStyle(
-                                  color: Colors.grey.shade500,
-                                  fontSize: 11,
-                                  height: 1,
-                                ),
-                              ),
-                              if (_createdAt != null) ...[
-                                WidgetSpan(
-                                  alignment: PlaceholderAlignment.middle,
-                                  child: Icon(
-                                    MdiIcons.circleSmall,
-                                    size: 10,
-                                    color: Colors.grey.shade500,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: '$_createdAt',
-                                  style: TextStyle(
-                                    color: Colors.grey.shade500,
-                                    fontSize: 11,
-                                    height: 1,
-                                  ),
-                                ),
-                              ],
-                              if (_editedAt != null) ...[
-                                WidgetSpan(
-                                  alignment: PlaceholderAlignment.middle,
-                                  child: Icon(
-                                    MdiIcons.circleSmall,
-                                    size: 10,
-                                    color: Colors.grey.shade500,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: '(last edited $_editedAt)',
-                                  style: TextStyle(
-                                    color: Colors.grey.shade500,
-                                    fontSize: 11,
-                                    height: 1,
-                                  ),
-                                ),
-                              ],
-                              if (item?.data?.over18 == true) ...[
-                                WidgetSpan(
-                                  alignment: PlaceholderAlignment.middle,
-                                  child: Icon(
-                                    MdiIcons.circleSmall,
-                                    size: 10,
-                                    color: Colors.grey.shade500,
-                                  ),
-                                ),
-                                const TextSpan(
-                                  text: 'NSFW',
-                                  style: TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 11,
-                                    height: 1,
-                                  ),
-                                ),
-                              ],
-                              if (item?.data?.domain != null) ...[
-                                WidgetSpan(
-                                  alignment: PlaceholderAlignment.middle,
-                                  child: Icon(
-                                    MdiIcons.circleSmall,
-                                    size: 10,
-                                    color: Colors.grey.shade500,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: item?.data?.domain ?? '',
-                                  style: TextStyle(
-                                    color: Colors.grey.shade500,
-                                    fontSize: 11,
-                                    height: 1,
-                                  ),
-                                ),
-                              ],
-                              if (bodyExpanded) ...[
-                                WidgetSpan(
-                                  alignment: PlaceholderAlignment.middle,
-                                  child: Icon(
-                                    MdiIcons.circleSmall,
-                                    size: 10,
-                                    color: Colors.grey.shade500,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: '${((item?.data?.upvoteRatio ?? 0) * 100).toInt()}% upvoted',
-                                  style: TextStyle(
-                                    color: Colors.grey.shade500,
-                                    fontSize: 11,
-                                    height: 1,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   )
                 ],
@@ -310,142 +313,7 @@ class LinkCardWidget extends StatelessWidget {
                   await openURL(href);
                 },
               ),
-              Builder(builder: (context) {
-                final redditMediaList = item?.data?.getImagesAndVideos;
-                final random = Random();
-                final isPostLink = item?.data?.postHint == 'link';
-                OverlayEntry? popupDialog;
-
-                final galleryItems = redditMediaList
-                        ?.map(
-                          (media) => media.type == MediaType.image
-                              ? (media.url != null
-                                  ? ImageWithLoader(
-                                      media.url,
-                                      width: media.width,
-                                      height: media.height,
-                                      withCacheHeight: false,
-                                    )
-                                  : null)
-                              : (media.type == MediaType.video && media.url != null)
-                                  ? VideoPlayerWidget(
-                                      url: media.url.toString(),
-                                    )
-                                  : media.type == MediaType.embed
-                                      ? InAppWebView(
-                                          initialUrlRequest: URLRequest(url: Uri.parse('${media.url}')),
-                                        )
-                                      : null,
-                        )
-                        .whereType<Widget>()
-                        .toList() ??
-                    [];
-
-                void createPopupDialog(Widget child) {
-                  popupDialog = OverlayEntry(builder: (context) => child);
-                  if (popupDialog != null) {
-                    Overlay.of(context).insert(popupDialog!);
-                  }
-                }
-
-                Future<void> linkHandler() async {
-                  if (isPostLink) {
-                    await openURL(item?.data?.urlOverriddenByDest);
-                  } else {
-                    if (galleryItems.isNotEmpty) {
-                      await context.pushTransparentRoute(
-                        Hero(
-                          transitionOnUserGestures: true,
-                          tag: random,
-                          child: GalleryWidget(children: galleryItems),
-                        ),
-                      );
-                    }
-                  }
-                }
-
-                if (item?.data?.getPreviewImage != null) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 5),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: GestureDetector(
-                        onLongPressStart: (_) {
-                          createPopupDialog(
-                            Hero(
-                              transitionOnUserGestures: true,
-                              tag: random,
-                              child: GalleryWidget(children: galleryItems),
-                            ),
-                          );
-                        },
-                        onLongPressEnd: (_) {
-                          popupDialog?.remove();
-                        },
-                        onTap: () async {
-                          await linkHandler();
-                        },
-                        child: Stack(
-                          fit: StackFit.loose,
-                          alignment: isPostLink ? Alignment.bottomCenter : Alignment.bottomRight,
-                          children: [
-                            Hero(
-                              tag: random,
-                              transitionOnUserGestures: true,
-                              child: ImageWithLoader(
-                                item?.data?.getPreviewImage?.url,
-                                width: item?.data?.getPreviewImage?.width,
-                                height: item?.data?.getPreviewImage?.height,
-                              ),
-                            ),
-                            if (item?.data?.getPreviewImage?.url != null &&
-                                (item?.data?.getPreviewImage?.url?.isNotEmpty ?? true))
-                              Container(
-                                margin: EdgeInsets.all(!isPostLink ? 7 : 0),
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.black87.withOpacity(0.8),
-                                  shape: BoxShape.rectangle,
-                                  borderRadius: !isPostLink ? BorderRadius.circular(5) : null,
-                                  border: !isPostLink
-                                      ? Border.all(
-                                          color: Colors.white,
-                                          width: 0.5,
-                                        )
-                                      : null,
-                                ),
-                                child: isPostLink
-                                    ? Center(
-                                        child: Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            item?.data?.urlOverriddenByDest ?? '',
-                                            style: const TextStyle(fontSize: 12),
-                                          ),
-                                        ),
-                                      )
-                                    : Icon(
-                                        redditMediaList != null && redditMediaList.isNotEmpty
-                                            ? (redditMediaList.first.type == MediaType.gif
-                                                ? Icons.gif
-                                                : redditMediaList.first.type == MediaType.video
-                                                    ? Icons.videocam_rounded
-                                                    : redditMediaList.first.type == MediaType.embed
-                                                        ? Icons.link
-                                                        : Icons.image)
-                                            : null,
-                                        size: 20,
-                                        color: Colors.white,
-                                      ),
-                              )
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              }),
+              LinkWidget(item),
               Row(
                 children: [
                   GestureDetector(
@@ -547,5 +415,182 @@ class LinkCardWidget extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class LinkWidget extends StatefulWidget {
+  final LinkResponse? item;
+  const LinkWidget(this.item, {super.key});
+
+  @override
+  State<LinkWidget> createState() => _LinkWidgetState();
+}
+
+class _LinkWidgetState extends State<LinkWidget> {
+  final random = Random();
+  bool get isPostLink => widget.item?.data?.postHint == 'link';
+  Metadata? get linkMeta => widget.item?.data?.linkMeta;
+  List<RedditMedia> get redditMediaList => widget.item?.data?.getImagesAndVideos ?? [];
+  OverlayEntry? popupDialog;
+
+  void createPopupDialog(Widget child) {
+    popupDialog = OverlayEntry(builder: (context) => child);
+    if (popupDialog == null) return;
+    Overlay.of(context).insert(popupDialog!);
+  }
+
+  Future<void> openURL(dynamic url) async {
+    EasyLoading.show();
+    final browser = ChromeSafariBrowser();
+    if (await canLaunchUrlString(url)) {
+      await browser.open(url: Uri.parse('$url'));
+      EasyLoading.dismiss();
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Not able to lauch URL.')));
+      }
+    }
+  }
+
+  Future<void> linkHandler() async {
+    Dev.log(isPostLink || linkMeta != null);
+    if (isPostLink || linkMeta != null) {
+      await openURL(widget.item?.data?.urlOverriddenByDest);
+    } else {
+      if (redditMediaList.isNotEmpty) {
+        await context.pushTransparentRoute(
+          Hero(
+            transitionOnUserGestures: true,
+            tag: random,
+            child: GalleryWidget(redditMediaList: redditMediaList),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.item?.data?.getPreviewImage != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(15),
+          child: GestureDetector(
+            onLongPressStart: (_) {
+              if (isPostLink) return;
+              createPopupDialog(
+                Hero(
+                  transitionOnUserGestures: true,
+                  tag: random,
+                  child: GalleryWidget(redditMediaList: redditMediaList),
+                ),
+              );
+            },
+            onLongPressEnd: (_) {
+              popupDialog?.remove();
+            },
+            onTap: () async {
+              await linkHandler();
+            },
+            child: Stack(
+              fit: StackFit.loose,
+              alignment: isPostLink ? Alignment.bottomCenter : Alignment.bottomRight,
+              children: [
+                Hero(
+                  tag: random,
+                  transitionOnUserGestures: true,
+                  child: ImageWithLoader(
+                    widget.item?.data?.getPreviewImage?.url,
+                    width: widget.item?.data?.getPreviewImage?.width,
+                    height: widget.item?.data?.getPreviewImage?.height,
+                  ),
+                ),
+                if (widget.item?.data?.getPreviewImage?.url != null &&
+                    (widget.item?.data?.getPreviewImage?.url?.isNotEmpty ?? true))
+                  Container(
+                    margin: EdgeInsets.all(!isPostLink ? 7 : 0),
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.black87.withOpacity(0.8),
+                      shape: BoxShape.rectangle,
+                      borderRadius: !isPostLink ? BorderRadius.circular(5) : null,
+                      border: !isPostLink
+                          ? Border.all(
+                              color: Colors.white,
+                              width: 0.5,
+                            )
+                          : null,
+                    ),
+                    child: isPostLink
+                        ? Center(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                widget.item?.data?.urlOverriddenByDest ?? '',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ),
+                          )
+                        : Icon(
+                            redditMediaList.isNotEmpty
+                                ? (redditMediaList.first.type == MediaType.gif
+                                    ? Icons.gif
+                                    : redditMediaList.first.type == MediaType.video
+                                        ? Icons.videocam_rounded
+                                        : redditMediaList.first.type == MediaType.embed
+                                            ? Icons.link
+                                            : Icons.image)
+                                : null,
+                            size: 20,
+                            color: Colors.white,
+                          ),
+                  )
+              ],
+            ),
+          ),
+        ),
+      );
+    } else if (linkMeta?.url != null &&
+        linkMeta?.title != null &&
+        linkMeta?.description != null &&
+        linkMeta?.image != null) {
+      return GestureDetector(
+        onTap: () async {
+          await linkHandler();
+        },
+        child: Stack(
+          fit: StackFit.loose,
+          alignment: Alignment.bottomCenter,
+          children: [
+            Hero(
+              tag: random,
+              transitionOnUserGestures: true,
+              child: ImageWithLoader(
+                linkMeta?.image,
+              ),
+            ),
+            if (linkMeta?.url != null && (linkMeta?.url?.isNotEmpty ?? true))
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.black87.withOpacity(0.8),
+                  shape: BoxShape.rectangle,
+                ),
+                child: Center(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      linkMeta?.url ?? '',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ),
+              )
+          ],
+        ),
+      );
+    }
+    return const SizedBox.shrink();
   }
 }

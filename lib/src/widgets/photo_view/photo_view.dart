@@ -234,6 +234,7 @@ class PhotoView extends StatefulWidget {
   const PhotoView({
     Key? key,
     required this.imageProvider,
+    this.secondChild,
     this.loadingBuilder,
     this.backgroundDecoration,
     this.wantKeepAlive = false,
@@ -271,6 +272,7 @@ class PhotoView extends StatefulWidget {
   const PhotoView.customChild({
     Key? key,
     required this.child,
+    this.secondChild,
     this.childSize,
     this.backgroundDecoration,
     this.wantKeepAlive = false,
@@ -339,6 +341,9 @@ class PhotoView extends StatefulWidget {
 
   /// The specified custom child to be shown instead of a image
   final Widget? child;
+
+  /// The second child not to be zoomed
+  final Widget? secondChild;
 
   /// The size of the custom [child]. [PhotoView] uses this value to compute the relation between the child and the container's size to calculate the scale value.
   final Size? childSize;
@@ -496,6 +501,7 @@ class _PhotoViewState extends State<PhotoView> with AutomaticKeepAliveClientMixi
 
         return widget._isCustomChild
             ? CustomChildWrapper(
+                secondChild: widget.secondChild,
                 childSize: widget.childSize,
                 backgroundDecoration: backgroundDecoration,
                 heroAttributes: widget.heroAttributes,

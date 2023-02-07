@@ -41,6 +41,7 @@ class PhotoViewCore extends StatefulWidget {
     required this.filterQuality,
     required this.disableGestures,
     required this.enablePanAlways,
+    this.secondChild,
   })  : customChild = null,
         super(key: key);
 
@@ -53,6 +54,7 @@ class PhotoViewCore extends StatefulWidget {
     this.onTapUp,
     this.onTapDown,
     this.onScaleEnd,
+    this.secondChild,
     this.gestureDetectorBehavior,
     required this.controller,
     required this.scaleBoundaries,
@@ -73,6 +75,7 @@ class PhotoViewCore extends StatefulWidget {
   final PhotoViewHeroAttributes? heroAttributes;
   final bool enableRotation;
   final Widget? customChild;
+  final Widget? secondChild;
 
   final PhotoViewControllerBase controller;
   final PhotoViewScaleStateController scaleStateController;
@@ -313,16 +316,22 @@ class PhotoViewCoreState extends State<PhotoViewCore>
               child: _buildHero(),
             );
 
-            final child = Container(
-              constraints: widget.tightMode ? BoxConstraints.tight(scaleBoundaries.childSize * scale) : null,
-              decoration: widget.backgroundDecoration ?? _defaultDecoration,
-              child: Center(
-                child: Transform(
-                  transform: matrix,
-                  alignment: basePosition,
-                  child: customChildLayout,
+            final child = Stack(
+              fit: StackFit.expand,
+              children: [
+                Container(
+                  constraints: widget.tightMode ? BoxConstraints.tight(scaleBoundaries.childSize * scale) : null,
+                  decoration: widget.backgroundDecoration ?? _defaultDecoration,
+                  child: Center(
+                    child: Transform(
+                      transform: matrix,
+                      alignment: basePosition,
+                      child: customChildLayout,
+                    ),
+                  ),
                 ),
-              ),
+                widget.secondChild ?? const SizedBox.shrink()
+              ],
             );
 
             if (widget.disableGestures) {
@@ -335,12 +344,12 @@ class PhotoViewCoreState extends State<PhotoViewCore>
               onScaleUpdate: onScaleUpdate,
               onScaleEnd: onScaleEnd,
               hitDetector: this,
-              onTapUp: widget.onTapUp != null ? (details) => widget.onTapUp!(context, details, value) : null,
-              onTapDown: widget.onTapDown != null ? (details) => widget.onTapDown!(context, details, value) : null,
+              onTapUp: (details) => widget.onTapUp?.call(context, details, value),
+              onTapDown: (details) => widget.onTapDown?.call(context, details, value),
               child: child,
             );
           } else {
-            return Container();
+            return const SizedBox.shrink();
           }
         });
   }

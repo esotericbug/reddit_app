@@ -13,7 +13,7 @@ class DrawerSearchBloc extends Bloc<DrawerSearchEvent, DrawerSearchState> {
   DrawerSearchBloc() : super(const DrawerSearchState()) {
     on<DrawerSearchItems>((event, emit) async {
       emit(state.copyWith(isFetching: true));
-      if (event.query != null && event.query!.isNotEmpty) {
+      if (event.query?.isNotEmpty ?? false) {
         try {
           final rawResponse = await http().get('/api/subreddit_autocomplete_v2.json', queryParameters: {
             'query': event.query ?? '',

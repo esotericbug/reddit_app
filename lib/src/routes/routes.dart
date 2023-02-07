@@ -5,6 +5,7 @@ import 'package:reddit_app/src/blocs/drawer_search/drawer_search_bloc.dart';
 import 'package:reddit_app/src/cubits/link_detail_data/link_detail_data_cubit.dart';
 import 'package:reddit_app/src/cubits/listing/listing_cubit.dart';
 import 'package:reddit_app/src/cubits/listing_screen/listing_screen_cubit.dart';
+import 'package:reddit_app/src/models/listing_response_model.dart';
 import 'package:reddit_app/src/screens/link_detail_screen.dart';
 import 'package:reddit_app/src/screens/listing_screen.dart';
 import 'package:reddit_app/src/screens/settings_view.dart';
@@ -16,51 +17,40 @@ class RouteGenerator {
       settings: routeSettings,
       child: Builder(
         builder: (context) {
+          final arguments = routeSettings.arguments;
           switch (routeSettings.name) {
             case SettingsView.routeName:
-              return const SettingsView();
+              {
+                return const SettingsView();
+              }
             case ListingScreen.routeName:
               {
                 return MultiBlocProvider(
                   providers: [
-                    BlocProvider(
-                      create: (context) => ListingCubit(),
-                    ),
-                    BlocProvider(
-                      create: (context) => ListingScreenCubit(),
-                    ),
-                    BlocProvider(
-                      create: (context) => DrawerSearchBloc(),
-                    ),
+                    BlocProvider(create: (context) => ListingCubit()),
+                    BlocProvider(create: (context) => ListingScreenCubit()),
+                    BlocProvider(create: (context) => DrawerSearchBloc()),
                   ],
-                  child: Builder(builder: (context) {
-                    final arguments = routeSettings.arguments;
-                    if (arguments != null) {
+                  child: Builder(
+                    builder: (context) {
+                      if (arguments == null) return const ListingScreen();
                       final args = arguments as Map<String, dynamic>;
-                      return ListingScreen(subreddit: args['subreddit']);
-                    }
-                    return const ListingScreen();
-                  }),
+                      return ListingScreen(subreddit: args['subreddit'] as String);
+                    },
+                  ),
                 );
               }
             case LinkDetailScreen.routeName:
               {
                 return MultiBlocProvider(
                   providers: [
-                    BlocProvider(
-                      create: (context) => LinkDetailDataCubit(),
-                    ),
+                    BlocProvider(create: (context) => LinkDetailDataCubit()),
                   ],
                   child: Builder(
                     builder: (context) {
-                      final arguments = routeSettings.arguments;
-                      if (arguments != null) {
-                        final args = arguments as Map<String, dynamic>;
-                        return LinkDetailScreen(
-                          item: args['item'],
-                        );
-                      }
-                      return const LinkDetailScreen();
+                      if (arguments == null) return const LinkDetailScreen();
+                      final args = arguments as Map<String, dynamic>;
+                      return LinkDetailScreen(item: args['item'] as LinkResponse);
                     },
                   ),
                 );

@@ -13,8 +13,10 @@ class VideoPlayerWidget extends StatefulWidget {
   final bool muted;
   final bool looping;
   final bool witchCache;
+  final VideoPlayerController controller;
   const VideoPlayerWidget({
     required this.url,
+    required this.controller,
     this.type = VideoType.network,
     this.videoPadding = const EdgeInsets.all(0),
     this.autoPlay = true,
@@ -31,13 +33,15 @@ class VideoPlayerWidget extends StatefulWidget {
 class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   // bool initialized = false;
   bool error = false;
-  VideoPlayerController? controller;
+  // VideoPlayerController? controller;
 
   final BehaviorSubject<int> progressController = BehaviorSubject<int>.seeded(0);
   final BehaviorSubject<bool> isInitializedController = BehaviorSubject<bool>.seeded(false);
   final BehaviorSubject<bool> isPlayingController = BehaviorSubject<bool>.seeded(false);
   final BehaviorSubject<bool> isBufferingController = BehaviorSubject<bool>.seeded(false);
   final BehaviorSubject<double> volumeController = BehaviorSubject<double>.seeded(0);
+
+  VideoPlayerController? get controller => widget.controller;
 
   @override
   void setState(fn) {
@@ -51,7 +55,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       try {
-        controller = await getController();
+        // controller = await getController();
         await controller?.initialize();
         if (widget.muted) await controller?.setVolume(volumeController.value);
         if (widget.autoPlay) await controller?.play();
@@ -179,145 +183,121 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                                         );
                                       });
                                 }),
-                            Positioned(
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              child: Padding(
-                                padding: const EdgeInsets.only(bottom: 5),
-                                child: Row(
-                                  children: [
-                                    const SizedBox(
-                                      width: 5,
-                                    ),
-                                    GestureDetector(
-                                      onTap: () async {
-                                        if (controller != null &&
-                                            controller!.value.isInitialized &&
-                                            !controller!.value.isBuffering) {
-                                          if (!controller!.value.isPlaying) {
-                                            await controller?.play();
-                                          } else {
-                                            await controller?.pause();
-                                          }
-                                        }
-                                      },
-                                      child: StreamBuilder<bool>(
-                                          stream: isPlayingController,
-                                          builder: (context, isPlayingData) {
-                                            return Icon(
-                                              size: 25,
-                                              color: Colors.white,
-                                              !(isPlayingData.data ?? false) ? Icons.play_arrow : Icons.pause,
-                                            );
-                                          }),
-                                    ),
-                                    Expanded(
-                                      child: SliderTheme(
-                                        data: SliderTheme.of(context).copyWith(
-                                          activeTrackColor: Colors.white,
-                                          inactiveTrackColor: Colors.grey,
-                                          trackShape: const RoundedRectSliderTrackShape(),
-                                          trackHeight: 1.0,
-                                          thumbShape: const RoundSliderThumbShape(
-                                            enabledThumbRadius: 10,
-                                            elevation: 0,
-                                            pressedElevation: 0,
-                                          ),
-                                          thumbColor: Colors.transparent,
-                                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
-                                          tickMarkShape: const RoundSliderTickMarkShape(),
-                                          valueIndicatorTextStyle: const TextStyle(color: Colors.white),
-                                        ),
-                                        child: StreamBuilder<int>(
-                                            stream: progressController,
-                                            builder: (context, snapshot) {
-                                              return Slider(
-                                                value: (snapshot.data ?? 0).toDouble(),
-                                                min: 0,
-                                                max: controller!.value.duration.inMicroseconds.toDouble(),
-                                                onChanged: (value) {
-                                                  progressController.add(value.toInt());
-                                                },
-                                                onChangeEnd: (value) async {
-                                                  if (value == controller!.value.duration.inMicroseconds.toDouble()) {
-                                                    await controller?.seekTo(Duration(microseconds: value.toInt() - 1));
-                                                  } else {
-                                                    await controller?.seekTo(Duration(microseconds: value.toInt()));
-                                                  }
-                                                  await controller?.play();
-                                                },
-                                                onChangeStart: (value) async {
-                                                  await controller?.pause();
-                                                },
-                                              );
-                                            }),
-                                      ),
-                                    ),
-                                    const SizedBox(
-                                      width: 5,
-                                    ),
-                                    Text(
-                                      '${getFormattedDuration(controller!.value.position)}/${getFormattedDuration(controller!.value.duration)}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    // const SizedBox(
-                                    //   width: 5,
-                                    // ),
-                                    // InkWell(
-                                    //   onTap: () async {
-                                    //     // await controller.pause();
-                                    //     if (!mounted) return;
-                                    //     context.pushTransparentRoute(DismissiblePage(
-                                    //       onDismissed: () => Navigator.of(context).pop(),
-                                    //       direction: DismissiblePageDismissDirection.vertical,
-                                    //       child: _VideoPlayerFullScreenWidget(
-                                    //         controller: controller!,
-                                    //         url: widget.url,
-                                    //       ),
-                                    //     ));
-                                    //   },
-                                    //   child: Ink(
-                                    //     child: const Icon(
-                                    //       Icons.fullscreen,
-                                    //       size: 25,
-                                    //       color: Colors.white,
-                                    //     ),
-                                    //   ),
-                                    // ),
-                                    const SizedBox(
-                                      width: 5,
-                                    ),
-                                    InkWell(
-                                      onTap: () async {
-                                        if (controller?.value.volume == 0) {
-                                          await controller?.setVolume(1);
-                                        } else {
-                                          await controller?.setVolume(0);
-                                        }
-                                      },
-                                      child: StreamBuilder<double>(
-                                          stream: volumeController,
-                                          builder: (context, volume) {
-                                            return Ink(
-                                              child: Icon(
-                                                volume.data == 0 ? Icons.volume_off : Icons.volume_up,
-                                                size: 25,
-                                                color: Colors.white,
-                                              ),
-                                            );
-                                          }),
-                                    ),
-                                    const SizedBox(
-                                      width: 10,
-                                    )
-                                  ],
-                                ),
-                              ),
-                            ),
+                            // Positioned(
+                            //   bottom: 0,
+                            //   left: 0,
+                            //   right: 0,
+                            //   child: Padding(
+                            //     padding: const EdgeInsets.only(bottom: 5),
+                            //     child: Row(
+                            //       children: [
+                            //         const SizedBox(
+                            //           width: 5,
+                            //         ),
+                            //         GestureDetector(
+                            //           onTap: () async {
+                            //             if (controller != null &&
+                            //                 controller!.value.isInitialized &&
+                            //                 !controller!.value.isBuffering) {
+                            //               if (!controller!.value.isPlaying) {
+                            //                 await controller?.play();
+                            //               } else {
+                            //                 await controller?.pause();
+                            //               }
+                            //             }
+                            //           },
+                            //           child: StreamBuilder<bool>(
+                            //               stream: isPlayingController,
+                            //               builder: (context, isPlayingData) {
+                            //                 return Icon(
+                            //                   size: 30,
+                            //                   color: Colors.white,
+                            //                   !(isPlayingData.data ?? false) ? Icons.play_arrow : Icons.pause,
+                            //                 );
+                            //               }),
+                            //         ),
+                            //         Expanded(
+                            //           child: SliderTheme(
+                            //             data: SliderTheme.of(context).copyWith(
+                            //               activeTrackColor: Colors.white,
+                            //               inactiveTrackColor: Colors.grey,
+                            //               trackShape: const RoundedRectSliderTrackShape(),
+                            //               trackHeight: 1.5,
+                            //               thumbShape: const RoundSliderThumbShape(
+                            //                 enabledThumbRadius: 18,
+                            //                 elevation: 0,
+                            //                 pressedElevation: 0,
+                            //               ),
+                            //               thumbColor: Colors.transparent,
+                            //               overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
+                            //               tickMarkShape: const RoundSliderTickMarkShape(),
+                            //               valueIndicatorTextStyle: const TextStyle(color: Colors.white),
+                            //             ),
+                            //             child: StreamBuilder<int>(
+                            //                 stream: progressController,
+                            //                 builder: (context, snapshot) {
+                            //                   return Slider(
+                            //                     value: (snapshot.data ?? 0).toDouble(),
+                            //                     min: 0,
+                            //                     max: controller!.value.duration.inMicroseconds.toDouble(),
+                            //                     onChanged: (value) {
+                            //                       progressController.add(value.toInt());
+                            //                     },
+                            //                     onChangeEnd: (value) async {
+                            //                       if (value == controller!.value.duration.inMicroseconds.toDouble()) {
+                            //                         await controller?.seekTo(Duration(microseconds: value.toInt() - 1));
+                            //                       } else {
+                            //                         await controller?.seekTo(Duration(microseconds: value.toInt()));
+                            //                       }
+                            //                       await controller?.play();
+                            //                     },
+                            //                     onChangeStart: (value) async {
+                            //                       await controller?.pause();
+                            //                     },
+                            //                   );
+                            //                 }),
+                            //           ),
+                            //         ),
+                            //         const SizedBox(
+                            //           width: 5,
+                            //         ),
+                            //         Text(
+                            //           '${getFormattedDuration(controller!.value.position)}/${getFormattedDuration(controller!.value.duration)}',
+                            //           style: const TextStyle(
+                            //             color: Colors.white,
+                            //             fontSize: 12,
+                            //           ),
+                            //         ),
+                            //         const SizedBox(
+                            //           width: 5,
+                            //         ),
+                            //         InkWell(
+                            //           onTap: () async {
+                            //             if (controller?.value.volume == 0) {
+                            //               await controller?.setVolume(1);
+                            //             } else {
+                            //               await controller?.setVolume(0);
+                            //             }
+                            //           },
+                            //           child: StreamBuilder<double>(
+                            //               stream: volumeController,
+                            //               builder: (context, volume) {
+                            //                 return Ink(
+                            //                   child: Icon(
+                            //                     volume.data == 0 ? Icons.volume_off : Icons.volume_up,
+                            //                     size: 23,
+                            //                     color: Colors.white,
+                            //                   ),
+                            //                 );
+                            //               }),
+                            //         ),
+                            //         const SizedBox(
+                            //           width: 10,
+                            //         )
+                            //       ],
+                            //     ),
+                            //   ),
+                            // ),
                           ],
                           if (controller!.value.isBuffering)
                             const Center(
@@ -347,6 +327,168 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
           ),
         );
       }),
+    );
+  }
+}
+
+class VideoControls extends StatefulWidget {
+  final VideoPlayerController? controller;
+  const VideoControls(this.controller, {super.key});
+
+  @override
+  State<VideoControls> createState() => _VideoControlsState();
+}
+
+class _VideoControlsState extends State<VideoControls> {
+  final BehaviorSubject<int> progressController = BehaviorSubject<int>.seeded(0);
+  final BehaviorSubject<bool> isInitializedController = BehaviorSubject<bool>.seeded(false);
+  final BehaviorSubject<bool> isPlayingController = BehaviorSubject<bool>.seeded(false);
+  final BehaviorSubject<bool> isBufferingController = BehaviorSubject<bool>.seeded(false);
+  final BehaviorSubject<double> volumeController = BehaviorSubject<double>.seeded(0);
+
+  VideoPlayerController? get controller => widget.controller;
+
+  @override
+  void initState() {
+    controller?.addListener(controllerListener);
+    super.initState();
+  }
+
+  @override
+  void dispose() async {
+    controller?.removeListener(controllerListener);
+    super.dispose();
+    // await controller?.dispose();
+  }
+
+  void controllerListener() {
+    if (controller == null) return;
+    progressController.add(controller!.value.position.inMicroseconds);
+    isInitializedController.add(controller!.value.isInitialized);
+    isPlayingController.add(controller!.value.isPlaying);
+    isBufferingController.add(controller!.value.isBuffering);
+    volumeController.add(controller!.value.volume);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      bottom: 5,
+      left: 0,
+      right: 0,
+      child: StreamBuilder<bool>(
+          stream: isInitializedController,
+          initialData: false,
+          builder: (context, isInitialized) {
+            if (isInitialized.data == false) {
+              return const SizedBox.shrink();
+            }
+            return Row(
+              children: [
+                const SizedBox(
+                  width: 5,
+                ),
+                GestureDetector(
+                  onTap: () async {
+                    if (controller != null && controller!.value.isInitialized && !controller!.value.isBuffering) {
+                      if (!controller!.value.isPlaying) {
+                        await controller?.play();
+                      } else {
+                        await controller?.pause();
+                      }
+                    }
+                  },
+                  child: StreamBuilder<bool>(
+                      stream: isPlayingController,
+                      builder: (context, isPlayingData) {
+                        return Icon(
+                          size: 30,
+                          color: Colors.white,
+                          !(isPlayingData.data ?? false) ? Icons.play_arrow : Icons.pause,
+                        );
+                      }),
+                ),
+                Expanded(
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: Colors.white,
+                      inactiveTrackColor: Colors.grey,
+                      trackShape: const RoundedRectSliderTrackShape(),
+                      trackHeight: 1.5,
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 18,
+                        elevation: 0,
+                        pressedElevation: 0,
+                      ),
+                      thumbColor: Colors.transparent,
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
+                      tickMarkShape: const RoundSliderTickMarkShape(),
+                      valueIndicatorTextStyle: const TextStyle(color: Colors.white),
+                    ),
+                    child: StreamBuilder<int>(
+                        stream: progressController,
+                        builder: (context, snapshot) {
+                          return Slider(
+                            value: (snapshot.data ?? 0).toDouble(),
+                            min: 0,
+                            max: controller!.value.duration.inMicroseconds.toDouble(),
+                            onChanged: (value) {
+                              progressController.add(value.toInt());
+                            },
+                            onChangeEnd: (value) async {
+                              if (value == controller!.value.duration.inMicroseconds.toDouble()) {
+                                await controller?.seekTo(Duration(microseconds: value.toInt() - 1));
+                              } else {
+                                await controller?.seekTo(Duration(microseconds: value.toInt()));
+                              }
+                              await controller?.play();
+                            },
+                            onChangeStart: (value) async {
+                              await controller?.pause();
+                            },
+                          );
+                        }),
+                  ),
+                ),
+                const SizedBox(
+                  width: 5,
+                ),
+                Text(
+                  '${getFormattedDuration(controller!.value.position)}/${getFormattedDuration(controller!.value.duration)}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(
+                  width: 5,
+                ),
+                InkWell(
+                  onTap: () async {
+                    if (controller?.value.volume == 0) {
+                      await controller?.setVolume(1);
+                    } else {
+                      await controller?.setVolume(0);
+                    }
+                  },
+                  child: StreamBuilder<double>(
+                      stream: volumeController,
+                      builder: (context, volume) {
+                        return Ink(
+                          child: Icon(
+                            volume.data == 0 ? Icons.volume_off : Icons.volume_up,
+                            size: 23,
+                            color: Colors.white,
+                          ),
+                        );
+                      }),
+                ),
+                const SizedBox(
+                  width: 10,
+                )
+              ],
+            );
+          }),
     );
   }
 }

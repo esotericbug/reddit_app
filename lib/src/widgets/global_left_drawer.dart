@@ -128,38 +128,40 @@ class _GlobalLeftDrawerState extends State<GlobalLeftDrawer> {
                         child: RefreshProgressIndicator(),
                       )
                     else
-                      ...?state.children?.map(
-                        (child) => InkWell(
-                          onTap: () {
-                            Navigator.of(context).pushNamed(ListingScreen.routeName, arguments: {
-                              'subreddit': child.data?.displayName,
-                            });
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(5),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 15.0,
-                                  foregroundImage:
-                                      child.data?.communityIcon != null && child.data!.communityIcon!.isNotEmpty
-                                          ? Image.network(
-                                              "${child.data?.communityIcon}",
-                                              fit: BoxFit.contain,
-                                              cacheHeight: 50,
-                                            ).image
-                                          : null,
-                                  child: const Text('r'),
+                      ...?state.children
+                          ?.where((child) => child.data?.displayName != null && child.data!.displayName!.isNotEmpty)
+                          .map(
+                            (child) => InkWell(
+                              onTap: () {
+                                Navigator.of(context).pushNamed(ListingScreen.routeName, arguments: {
+                                  'subreddit': child.data?.displayName,
+                                });
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(5),
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 15.0,
+                                      foregroundImage:
+                                          child.data?.communityIcon != null && child.data!.communityIcon!.isNotEmpty
+                                              ? Image.network(
+                                                  "${child.data?.communityIcon}",
+                                                  fit: BoxFit.contain,
+                                                  cacheHeight: 50,
+                                                ).image
+                                              : null,
+                                      child: const Text('r'),
+                                    ),
+                                    const SizedBox(
+                                      width: 5,
+                                    ),
+                                    Text('${child.data?.displayName}'),
+                                  ],
                                 ),
-                                const SizedBox(
-                                  width: 5,
-                                ),
-                                Text('${child.data?.displayName}'),
-                              ],
+                              ),
                             ),
                           ),
-                        ),
-                      ),
                   ],
                 );
               },

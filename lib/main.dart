@@ -27,12 +27,12 @@ void main() async {
 //       statusBarColor: Colors.transparent,
 //     ),
 //   );
-  runApp(MultiBlocProvider(
-    providers: [
-      BlocProvider(
-        create: (context) => ThemeCubit(),
-      ),
-    ],
-    child: const App(),
-  ));
+  runApp(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => ThemeCubit()),
+      ],
+      child: const App(),
+    ),
+  );
 }

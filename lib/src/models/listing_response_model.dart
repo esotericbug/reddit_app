@@ -7,6 +7,7 @@ import 'dart:convert';
 
 import 'package:collection/collection.dart';
 import 'package:reddit_app/src/helpers/enums.dart';
+import 'package:reddit_app/src/utils/metadata_fetch/metadata_fetch.dart';
 
 class ListingResponse {
   ListingResponse({
@@ -330,6 +331,7 @@ class LinkData {
   Map<String, MediaMetadatum>? mediaMetadata;
   GalleryData? galleryData;
   List<LinkData>? crosspostParentList;
+  Metadata? linkMeta;
 
   factory LinkData.fromJson(String str) => LinkData.fromMap(json.decode(str));
 
@@ -581,6 +583,7 @@ class LinkData {
         "gallery_data": galleryData?.toMap(),
         "crosspost_parent_list":
             crosspostParentList == null ? [] : List<dynamic>.from(crosspostParentList!.map((x) => x.toMap())),
+        "linkMeta": linkMeta?.toMap()
       };
 
   RedditMedia? get getPreviewImage {
@@ -616,13 +619,14 @@ class LinkData {
       crossLinkData = crosspostParentList?.first;
     }
 
-    if ((crossLinkData?.media ?? media)?.redditVideo != null) {
+    if ((crossLinkData?.secureMedia ?? secureMedia)?.redditVideo != null) {
       data.add(
         RedditMedia(
-          url: (crossLinkData?.media ?? media)?.redditVideo?.hlsUrl,
-          width: (crossLinkData?.media ?? media)?.redditVideo?.width,
-          height: (crossLinkData?.media ?? media)?.redditVideo?.height,
-          type: (crossLinkData?.media ?? media)?.redditVideo?.isGif == true ? MediaType.gif : MediaType.video,
+          url: (crossLinkData?.secureMedia ?? secureMedia)?.redditVideo?.hlsUrl,
+          width: (crossLinkData?.secureMedia ?? secureMedia)?.redditVideo?.width,
+          height: (crossLinkData?.secureMedia ?? secureMedia)?.redditVideo?.height,
+          type:
+              (crossLinkData?.secureMedia ?? secureMedia)?.redditVideo?.isGif == true ? MediaType.gif : MediaType.video,
         ),
       );
     }
@@ -674,17 +678,20 @@ class LinkData {
       );
     }
 
-    // if ((crossLinkData?.secureMediaEmbed ?? secureMediaEmbed)?.mediaDomainUrl != null) {
-    //   // Dev.log((crossLinkData?.secureMediaEmbed ?? secureMediaEmbed)?.mediaDomainUrl);
-    //   data.add(
-    //     RedditMedia(
-    //       url: (crossLinkData?.secureMediaEmbed ?? secureMediaEmbed)?.mediaDomainUrl,
-    //       width: (crossLinkData?.secureMediaEmbed ?? secureMediaEmbed)?.width,
-    //       height: (crossLinkData?.secureMediaEmbed ?? secureMediaEmbed)?.height,
-    //       type: MediaType.embed,
-    //     ),
-    //   );
-    // }
+    if ((crossLinkData?.preview ?? preview) != null && (crossLinkData?.preview ?? preview)!.images!.isNotEmpty) {
+      (crossLinkData?.preview ?? preview)?.images?.forEach((image) {
+        if (image.variants?.mp4 != null) {
+          data.add(
+            RedditMedia(
+              url: image.variants?.mp4?.source?.url,
+              width: image.variants?.mp4?.source?.width,
+              height: image.variants?.mp4?.source?.height,
+              type: MediaType.video,
+            ),
+          );
+        }
+      });
+    }
 
     if (data.isEmpty) {
       if ((crossLinkData?.preview ?? preview) != null && (crossLinkData?.preview ?? preview)!.images!.isNotEmpty) {
@@ -700,10 +707,6 @@ class LinkData {
         });
       }
     }
-
-    // data.forEach((element) {
-    //   Dev.log(element.toJson());
-    // });
 
     return data;
   }
@@ -1156,10 +1159,14 @@ class Variants {
   Variants({
     this.obfuscated,
     this.nsfw,
+    this.mp4,
+    this.gif,
   });
 
   Nsfw? obfuscated;
   Nsfw? nsfw;
+  Nsfw? mp4;
+  Nsfw? gif;
 
   factory Variants.fromJson(String str) => Variants.fromMap(json.decode(str));
 
@@ -1168,11 +1175,15 @@ class Variants {
   factory Variants.fromMap(Map<String, dynamic> json) => Variants(
         obfuscated: json["obfuscated"] == null ? null : Nsfw.fromMap(json["obfuscated"]),
         nsfw: json["nsfw"] == null ? null : Nsfw.fromMap(json["nsfw"]),
+        mp4: json["mp4"] == null ? null : Nsfw.fromMap(json["mp4"]),
+        gif: json["gif"] == null ? null : Nsfw.fromMap(json["gif"]),
       );
 
   Map<String, dynamic> toMap() => {
         "obfuscated": obfuscated?.toMap(),
         "nsfw": nsfw?.toMap(),
+        "mp4": mp4?.toMap(),
+        "gif": gif?.toMap(),
       };
 }
 

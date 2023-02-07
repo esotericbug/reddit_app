@@ -228,6 +228,7 @@ class CustomChildWrapper extends StatelessWidget {
   const CustomChildWrapper({
     Key? key,
     this.child,
+    this.secondChild,
     required this.childSize,
     required this.backgroundDecoration,
     this.heroAttributes,
@@ -252,6 +253,7 @@ class CustomChildWrapper extends StatelessWidget {
   }) : super(key: key);
 
   final Widget? child;
+  final Widget? secondChild;
   final Size? childSize;
   final Decoration backgroundDecoration;
   final PhotoViewHeroAttributes? heroAttributes;
@@ -289,6 +291,7 @@ class CustomChildWrapper extends StatelessWidget {
 
     return PhotoViewCore.customChild(
       customChild: child,
+      secondChild: secondChild,
       backgroundDecoration: backgroundDecoration,
       enableRotation: enableRotation,
       heroAttributes: heroAttributes,

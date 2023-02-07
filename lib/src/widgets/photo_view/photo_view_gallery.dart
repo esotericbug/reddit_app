@@ -205,9 +205,7 @@ class _PhotoViewGalleryState extends State<PhotoViewGallery> {
   late final PageController _controller = widget.pageController ?? PageController();
 
   void scaleStateChangedCallback(PhotoViewScaleState scaleState) {
-    if (widget.scaleStateChangedCallback != null) {
-      widget.scaleStateChangedCallback!(scaleState);
-    }
+    widget.scaleStateChangedCallback?.call(scaleState);
   }
 
   int get actualPage {
@@ -267,6 +265,7 @@ class _PhotoViewGalleryState extends State<PhotoViewGallery> {
             filterQuality: pageOption.filterQuality,
             basePosition: pageOption.basePosition,
             disableGestures: pageOption.disableGestures,
+            secondChild: pageOption.secondChild,
             child: pageOption.child,
           )
         : PhotoView(
@@ -334,12 +333,16 @@ class PhotoViewGalleryPageOptions {
     this.filterQuality,
     this.disableGestures,
     this.errorBuilder,
+    this.secondChild,
   })  : child = null,
         childSize = null,
-        assert(imageProvider != null);
+        assert(
+          imageProvider != null,
+        );
 
   PhotoViewGalleryPageOptions.customChild({
     required this.child,
+    this.secondChild,
     this.childSize,
     this.heroAttributes,
     this.minScale,
@@ -385,6 +388,9 @@ class PhotoViewGalleryPageOptions {
 
   /// Mirror to [PhotoView.child]
   final Widget? child;
+
+  /// Mirror to [PhotoView.child]
+  final Widget? secondChild;
 
   /// Mirror to [PhotoView.childSize]
   final Size? childSize;

@@ -4,6 +4,8 @@ import 'package:equatable/equatable.dart';
 import 'package:reddit_app/src/helpers/http.dart';
 import 'package:reddit_app/src/models/error_response_model.dart';
 import 'package:reddit_app/src/models/listing_response_model.dart';
+import 'package:reddit_app/src/utils/metadata_fetch/metadata_fetch.dart';
+import 'package:collection/collection.dart';
 
 part 'listing_state.dart';
 
@@ -15,9 +17,18 @@ class ListingCubit extends Cubit<ListingState> {
       final rawResponse = await http().get('/r/$subreddit.json', queryParameters: {'count': 25});
 
       final response = ListingResponse.fromJson(rawResponse.data);
+      List<String?> urls = [];
+      response.data?.children?.forEach((child) {
+        urls.add(child.data?.urlOverriddenByDest);
+      });
+      final metaDatas = await Future.wait<Metadata?>(urls.map((url) => MetadataFetch.extract('$url')));
+      final children = response.data?.children?.mapIndexed((index, child) {
+        child.data?.linkMeta = metaDatas[index];
+        return child;
+      }).toList();
       if (isClosed) return;
       emit(state.copyWith(
-        children: response.data?.children,
+        children: children,
         error: null,
         isFetching: false,
         subreddit: subreddit,
@@ -47,9 +58,18 @@ class ListingCubit extends Cubit<ListingState> {
           await http().get('/r/$subreddit.json', queryParameters: {'count': 25, 'after': state.pages?.last});
 
       final response = ListingResponse.fromJson(rawResponse.data);
+      List<String?> urls = [];
+      response.data?.children?.forEach((child) {
+        urls.add(child.data?.urlOverriddenByDest);
+      });
+      final metaDatas = await Future.wait<Metadata?>(urls.map((url) => MetadataFetch.extract('$url')));
+      final children = response.data?.children?.mapIndexed((index, child) {
+        child.data?.linkMeta = metaDatas[index];
+        return child;
+      }).toList();
       if (isClosed) return;
       emit(state.copyWith(
-        children: [...?(state.children), ...(response.data?.children ?? [])],
+        children: [...?(state.children), ...?(children)],
         error: null,
         isFetching: false,
         subreddit: subreddit,

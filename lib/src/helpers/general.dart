@@ -6,6 +6,12 @@ import 'package:html/parser.dart' as htmlparser;
 
 final GlobalKey<ScaffoldMessengerState> snackbarKey = GlobalKey<ScaffoldMessengerState>();
 
+extension StringExtension on String {
+  String toCapitalized() => length > 0 ? '${this[0].toUpperCase()}${substring(1).toLowerCase()}' : '';
+  String toTitleCase() => replaceAll(RegExp(' +'), ' ').split(' ').map((str) => str.toCapitalized()).join(' ');
+  String useCorrectEllipsis() => replaceAll('', '\u200B');
+}
+
 class Dev {
   static log([dynamic value, dynamic value1]) => dev.log('$value ${value1 ?? ''}');
 }
@@ -70,11 +76,6 @@ showSnackBar(
   });
 }
 
-extension StringExtension on String {
-  String toCapitalized() => length > 0 ? '${this[0].toUpperCase()}${substring(1).toLowerCase()}' : '';
-  String toTitleCase() => replaceAll(RegExp(' +'), ' ').split(' ').map((str) => str.toCapitalized()).join(' ');
-}
-
 class CalcPosition {
   final double x;
   final double y;
@@ -108,7 +109,7 @@ class BoundingMeasurements {
 }
 
 Future<bool> showExitPopup(BuildContext context) async {
-  if (ModalRoute.of(context) != null && ModalRoute.of(context)!.isFirst) {
+  if (ModalRoute.of(context)?.isFirst ?? false) {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
@@ -164,7 +165,8 @@ class ImageWithLoader extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, contraints) {
         return AspectRatio(
-          aspectRatio: ((width ?? 1).toDouble()) / ((height ?? 1).toDouble()),
+          aspectRatio: ((width ?? (contraints.maxWidth.isFinite ? contraints.maxWidth.toInt() : 1)).toDouble()) /
+              ((height ?? 200).toDouble()),
           child: Image.network(
             '$url',
             fit: BoxFit.contain,
@@ -192,4 +194,22 @@ String getFormattedDuration(Duration duration) {
 String utf8convert(String text) {
   List<int> bytes = text.toString().codeUnits;
   return utf8.decode(bytes);
+}
+
+// Helper functions for validator and sanitizer.
+shift(List l) {
+  if (l.isNotEmpty) {
+    var first = l.first;
+    l.removeAt(0);
+    return first;
+  }
+  return null;
+}
+
+Map<String, Object> merge(Map<String, Object>? obj, Map<String, Object> defaults) {
+  if (obj == null) {
+    return defaults;
+  }
+  defaults.forEach((key, val) => obj.putIfAbsent(key, () => val));
+  return obj;
 }

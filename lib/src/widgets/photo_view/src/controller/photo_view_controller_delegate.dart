@@ -47,7 +47,7 @@ mixin PhotoViewControllerDelegate on State<PhotoViewCore> {
       scaleBoundaries,
     );
 
-    _animateScale!(prevScale, nextScale);
+    _animateScale?.call(prevScale, nextScale);
   }
 
   void addAnimateOnScaleStateUpdate(
