@@ -8,14 +8,14 @@ import '../src/utils/util.dart';
 
 class MetadataFetch {
   /// Fetches a [url], validates it, and returns [Metadata].
-  static Future<Metadata?> extract(String url) async {
-    if (!isURL(url)) {
+  static Future<Metadata?> extract(String? url) async {
+    if (!isURL(url ?? '')) {
       return null;
     }
 
     /// Sane defaults; Always return the Domain name as the [title], and a [description] for a given [url]
     final defaultOutput = Metadata();
-    defaultOutput.title = getDomain(url);
+    defaultOutput.title = getDomain(url ?? '');
     defaultOutput.description = url;
 
     try {
@@ -26,7 +26,7 @@ class MetadataFetch {
           responseType: ResponseType.plain,
           headers: {'Cache-Control': 'no-store'},
         ),
-      ).get(url);
+      ).get(url ?? '');
       final headerContentTypes = response.headers['content-type'];
 
       if (headerContentTypes != null && headerContentTypes[0].startsWith(r'image/')) {

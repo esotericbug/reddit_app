@@ -133,6 +133,7 @@ class _GlobalLeftDrawerState extends State<GlobalLeftDrawer> {
                           .map(
                             (child) => InkWell(
                               onTap: () {
+                                FocusManager.instance.primaryFocus?.unfocus();
                                 Navigator.of(context).pushNamed(ListingScreen.routeName, arguments: {
                                   'subreddit': child.data?.displayName,
                                 });

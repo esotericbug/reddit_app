@@ -9,6 +9,7 @@ Dio http({
     Dio(
       BaseOptions(
         validateStatus: validateStatus,
+        contentType: 'application/json',
         responseType: responseType,
         headers: {'Cache-Control': 'no-store'},
         baseUrl: baseUrl,

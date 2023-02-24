@@ -1,6 +1,11 @@
+import 'dart:async';
+import 'dart:isolate';
+
 import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
+import 'package:reddit_app/src/helpers/general.dart';
 import 'package:reddit_app/src/helpers/http.dart';
 import 'package:reddit_app/src/models/error_response_model.dart';
 import 'package:reddit_app/src/models/listing_response_model.dart';
@@ -21,7 +26,10 @@ class ListingCubit extends Cubit<ListingState> {
       response.data?.children?.forEach((child) {
         urls.add(child.data?.urlOverriddenByDest);
       });
-      final metaDatas = await Future.wait<Metadata?>(urls.map((url) => MetadataFetch.extract('$url')));
+      final metaDatas = await Future.wait<Metadata?>(urls.map((url) {
+        // Dev.log(computeMeta(url));
+        return computeMeta(url);
+      }).toList());
       final children = response.data?.children?.mapIndexed((index, child) {
         child.data?.linkMeta = metaDatas[index];
         return child;
@@ -62,7 +70,7 @@ class ListingCubit extends Cubit<ListingState> {
       response.data?.children?.forEach((child) {
         urls.add(child.data?.urlOverriddenByDest);
       });
-      final metaDatas = await Future.wait<Metadata?>(urls.map((url) => MetadataFetch.extract('$url')));
+      final metaDatas = await Future.wait<Metadata?>(urls.map((url) => computeMeta('$url')));
       final children = response.data?.children?.mapIndexed((index, child) {
         child.data?.linkMeta = metaDatas[index];
         return child;
@@ -86,4 +94,40 @@ class ListingCubit extends Cubit<ListingState> {
       ));
     }
   }
+}
+
+Future<Metadata?> computeMeta(String? url) async {
+  return await compute<String, Metadata?>(MetadataFetch.extract, '$url');
+}
+
+class RequiredArgs {
+  late final SendPort sendPort;
+  late String url;
+
+  RequiredArgs(this.url, this.sendPort);
+}
+
+entryPoint(RequiredArgs data) async {
+  final metadata = await MetadataFetch.extract(data.url);
+  data.sendPort.send(metadata);
+}
+
+Future<Metadata?> fetchMeta(String? url) async {
+  final completer = Completer<Metadata?>();
+  final recievePort = ReceivePort(); //creating new port to listen data
+  RequiredArgs requiredArgs = RequiredArgs('$url', recievePort.sendPort);
+  final isolate =
+      await Isolate.spawn<RequiredArgs>(entryPoint, requiredArgs); //spawing/creating new thread as isolates.
+
+  late StreamSubscription subscription;
+
+  subscription = recievePort.listen((value) {
+    final val = value as Metadata?;
+    isolate.kill(priority: Isolate.immediate);
+    recievePort.close();
+    subscription.cancel();
+    completer.complete(val);
+  });
+
+  return completer.future;
 }

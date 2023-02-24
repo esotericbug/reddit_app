@@ -452,9 +452,8 @@ class _LinkWidgetState extends State<LinkWidget> {
     }
   }
 
-  Future<void> linkHandler() async {
-    Dev.log(isPostLink || linkMeta != null);
-    if (isPostLink || linkMeta != null) {
+  Future<void> linkHandler({bool isArticle = false}) async {
+    if (isPostLink || isArticle) {
       await openURL(widget.item?.data?.urlOverriddenByDest);
     } else {
       if (redditMediaList.isNotEmpty) {
@@ -557,7 +556,7 @@ class _LinkWidgetState extends State<LinkWidget> {
         linkMeta?.image != null) {
       return GestureDetector(
         onTap: () async {
-          await linkHandler();
+          await linkHandler(isArticle: true);
         },
         child: Stack(
           fit: StackFit.loose,
