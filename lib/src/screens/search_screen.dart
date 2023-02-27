@@ -8,24 +8,26 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
-import 'package:reddit_app/src/cubits/listing/listing_cubit.dart';
 import 'package:reddit_app/src/cubits/listing_screen/listing_screen_cubit.dart';
+import 'package:reddit_app/src/cubits/search/search_cubit.dart';
 import 'package:reddit_app/src/helpers/general.dart';
 import 'package:reddit_app/src/widgets/global_left_drawer.dart';
 import 'package:reddit_app/src/widgets/inner_drawer.dart';
 import 'package:reddit_app/src/widgets/link_card_widget.dart';
 import 'package:rxdart/rxdart.dart';
 
-class ListingScreen extends StatefulWidget {
-  static const routeName = 'listing_screen';
-  final String subreddit;
-  const ListingScreen({this.subreddit = 'popular', super.key});
+class SearchScreen extends StatefulWidget {
+  static const routeName = 'search_screen';
+  final String? subreddit;
+  final String? query;
+  final bool? restrict;
+  const SearchScreen({this.subreddit, this.query, this.restrict = true, super.key});
 
   @override
-  State<ListingScreen> createState() => _ListingScreenState();
+  State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _ListingScreenState extends State<ListingScreen> {
+class _SearchScreenState extends State<SearchScreen> {
   ModalRoute<dynamic>? _route;
   ScrollController scollController = ScrollController();
   // GlobalKey<State> key = GlobalKey();
@@ -36,7 +38,9 @@ class _ListingScreenState extends State<ListingScreen> {
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      await context.read<ListingCubit>().fetchInitial(subreddit: widget.subreddit);
+      await context
+          .read<SearchCubit>()
+          .search(subreddit: widget.subreddit, query: widget.query, restrict: widget.restrict ?? true);
     });
     super.initState();
   }
@@ -65,7 +69,7 @@ class _ListingScreenState extends State<ListingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ListingCubit, ListingState>(
+    return BlocBuilder<SearchCubit, SearchState>(
       builder: (context, listingState) {
         return InnerDrawer(
           innerDrawerCallback: (isOpened) {
@@ -123,7 +127,8 @@ class _ListingScreenState extends State<ListingScreen> {
                 return true;
               },
               child: RefreshIndicator(
-                onRefresh: () => context.read<ListingCubit>().fetchInitial(subreddit: widget.subreddit),
+                onRefresh: () => context.read<SearchCubit>().fetchMoreSearch(
+                    subreddit: widget.subreddit, restrict: widget.restrict ?? true, query: widget.query),
                 child: Builder(
                   builder: (context) {
                     if (listingState.isFetching && (listingState.children?.isEmpty ?? true)) {
@@ -227,7 +232,10 @@ class _ListingScreenState extends State<ListingScreen> {
                                         child: RefreshProgressIndicator(),
                                       );
                                     } else {
-                                      context.read<ListingCubit>().fetchMore(subreddit: widget.subreddit);
+                                      context.read<SearchCubit>().fetchMoreSearch(
+                                          subreddit: widget.subreddit,
+                                          restrict: widget.restrict ?? true,
+                                          query: widget.query);
                                       return const SizedBox();
                                     }
                                   }

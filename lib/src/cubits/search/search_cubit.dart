@@ -1,24 +1,25 @@
-import 'dart:async';
-import 'dart:isolate';
-
 import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/foundation.dart';
+import 'package:reddit_app/src/cubits/listing/listing_cubit.dart';
 import 'package:reddit_app/src/helpers/http.dart';
 import 'package:reddit_app/src/models/error_response_model.dart';
 import 'package:reddit_app/src/models/listing_response_model.dart';
 import 'package:reddit_app/src/utils/metadata_fetch/metadata_fetch.dart';
 import 'package:collection/collection.dart';
 
-part 'listing_state.dart';
+part 'search_state.dart';
 
-class ListingCubit extends Cubit<ListingState> {
-  ListingCubit() : super(const ListingState());
+class SearchCubit extends Cubit<SearchState> {
+  SearchCubit() : super(const SearchState());
 
-  Future<void> fetchInitial({String? subreddit}) async {
+  Future<void> search({String? subreddit, String? query, bool? restrict}) async {
     try {
-      final rawResponse = await http().get('/r/$subreddit.json', queryParameters: {'count': 25});
+      final queryUrl = (subreddit == null || subreddit.isEmpty) ? '/search.json' : '/r/$subreddit/search.json';
+      final rawResponse = await http().get(queryUrl, queryParameters: {
+        'restrict_sr': restrict,
+        'q': query ?? '',
+      });
 
       final response = ListingResponse.fromJson(rawResponse.data);
       List<String?> urls = [];
@@ -57,13 +58,13 @@ class ListingCubit extends Cubit<ListingState> {
     }
   }
 
-  Future<void> fetchMore({String? subreddit}) async {
+  Future<void> fetchMoreSearch({String? subreddit, String? query, bool? restrict}) async {
     try {
       if (isClosed) return;
       emit(state.copyWith(isFetching: true));
-      final rawResponse =
-          await http().get('/r/$subreddit.json', queryParameters: {'count': 25, 'after': state.pages?.last});
-
+      final queryUrl = (subreddit == null || subreddit.isEmpty) ? '/search.json' : '/r/$subreddit/search.json';
+      final rawResponse = await http()
+          .get(queryUrl, queryParameters: {'restrict_sr': restrict, 'q': query ?? '', 'after': state.pages?.last});
       final response = ListingResponse.fromJson(rawResponse.data);
       List<String?> urls = [];
       response.data?.children?.forEach((child) {
@@ -93,40 +94,4 @@ class ListingCubit extends Cubit<ListingState> {
       ));
     }
   }
-}
-
-Future<Metadata?> computeMeta(String? url) async {
-  return await compute<String, Metadata?>(MetadataFetch.extract, '$url');
-}
-
-class RequiredArgs {
-  late final SendPort sendPort;
-  late String url;
-
-  RequiredArgs(this.url, this.sendPort);
-}
-
-entryPoint(RequiredArgs data) async {
-  final metadata = await MetadataFetch.extract(data.url);
-  data.sendPort.send(metadata);
-}
-
-Future<Metadata?> fetchMeta(String? url) async {
-  final completer = Completer<Metadata?>();
-  final recievePort = ReceivePort(); //creating new port to listen data
-  RequiredArgs requiredArgs = RequiredArgs('$url', recievePort.sendPort);
-  final isolate =
-      await Isolate.spawn<RequiredArgs>(entryPoint, requiredArgs); //spawing/creating new thread as isolates.
-
-  late StreamSubscription subscription;
-
-  subscription = recievePort.listen((value) {
-    final val = value as Metadata?;
-    isolate.kill(priority: Isolate.immediate);
-    recievePort.close();
-    subscription.cancel();
-    completer.complete(val);
-  });
-
-  return completer.future;
 }

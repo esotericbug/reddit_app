@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:reddit_app/src/blocs/drawer_search/drawer_search_bloc.dart';
 import 'package:reddit_app/src/cubits/link_detail_data/link_detail_data_cubit.dart';
 import 'package:reddit_app/src/cubits/listing/listing_cubit.dart';
 import 'package:reddit_app/src/cubits/listing_screen/listing_screen_cubit.dart';
+import 'package:reddit_app/src/cubits/search/search_cubit.dart';
 import 'package:reddit_app/src/models/listing_response_model.dart';
 import 'package:reddit_app/src/screens/link_detail_screen.dart';
 import 'package:reddit_app/src/screens/listing_screen.dart';
+import 'package:reddit_app/src/screens/search_screen.dart';
 import 'package:reddit_app/src/screens/settings_view.dart';
 
 class RouteGenerator {
@@ -29,13 +30,32 @@ class RouteGenerator {
                   providers: [
                     BlocProvider(create: (context) => ListingCubit()),
                     BlocProvider(create: (context) => ListingScreenCubit()),
-                    BlocProvider(create: (context) => DrawerSearchBloc()),
                   ],
                   child: Builder(
                     builder: (context) {
                       if (arguments == null) return const ListingScreen();
                       final args = arguments as Map<String, dynamic>;
                       return ListingScreen(subreddit: args['subreddit'] as String);
+                    },
+                  ),
+                );
+              }
+            case SearchScreen.routeName:
+              {
+                return MultiBlocProvider(
+                  providers: [
+                    BlocProvider(create: (context) => SearchCubit()),
+                    BlocProvider(create: (context) => ListingScreenCubit()),
+                  ],
+                  child: Builder(
+                    builder: (context) {
+                      if (arguments == null) return const SearchScreen();
+                      final args = arguments as Map<String, dynamic>;
+                      return SearchScreen(
+                        subreddit: args['subreddit'] as String?,
+                        query: args['query'] as String?,
+                        restrict: args['restrict'] as bool?,
+                      );
                     },
                   ),
                 );

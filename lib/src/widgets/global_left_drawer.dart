@@ -5,15 +5,32 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:reddit_app/src/blocs/drawer_search/drawer_search_bloc.dart';
 import 'package:reddit_app/src/cubits/theme/theme_cubit.dart';
 import 'package:reddit_app/src/screens/listing_screen.dart';
+import 'package:reddit_app/src/screens/search_screen.dart';
 
-class GlobalLeftDrawer extends StatefulWidget {
-  const GlobalLeftDrawer({super.key});
+class GlobalSearch extends StatelessWidget {
+  final bool inSubreddit;
+  final String? subreddit;
+  const GlobalSearch({this.inSubreddit = false, this.subreddit, super.key});
 
   @override
-  State<GlobalLeftDrawer> createState() => _GlobalLeftDrawerState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => DrawerSearchBloc(),
+      child: _SearchWrap(inSubreddit, subreddit: subreddit),
+    );
+  }
 }
 
-class _GlobalLeftDrawerState extends State<GlobalLeftDrawer> {
+class _SearchWrap extends StatefulWidget {
+  final bool inSubreddit;
+  final String? subreddit;
+  const _SearchWrap(this.inSubreddit, {this.subreddit});
+
+  @override
+  State<_SearchWrap> createState() => __SearchWrapState();
+}
+
+class __SearchWrapState extends State<_SearchWrap> {
   DrawerSearchBloc? searchBloc;
   Timer? _debounce;
   TextEditingController textController = TextEditingController();
@@ -123,6 +140,38 @@ class _GlobalLeftDrawerState extends State<GlobalLeftDrawer> {
                         onChanged: _onSearchChanged,
                       ),
                     ),
+                    if (textController.text.isNotEmpty)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              child: const Text('Search all'),
+                              onPressed: () {
+                                FocusManager.instance.primaryFocus?.unfocus();
+                                Navigator.of(context).pushNamed(SearchScreen.routeName, arguments: {
+                                  'subreddit': null,
+                                  'query': textController.text,
+                                  'restrict': false,
+                                });
+                              },
+                            ),
+                          ),
+                          if (widget.inSubreddit && widget.subreddit != null && (widget.subreddit?.isNotEmpty ?? false))
+                            Expanded(
+                              child: OutlinedButton(
+                                child: Text('Search ${widget.subreddit}'),
+                                onPressed: () {
+                                  FocusManager.instance.primaryFocus?.unfocus();
+                                  Navigator.of(context).pushNamed(SearchScreen.routeName, arguments: {
+                                    'subreddit': widget.subreddit,
+                                    'query': textController.text,
+                                    'restrict': true
+                                  });
+                                },
+                              ),
+                            )
+                        ],
+                      ),
                     if (state.isFetching && (state.children == null))
                       const Center(
                         child: RefreshProgressIndicator(),
