@@ -37,6 +37,7 @@ dependencies:
       ref: main
       path: modal_bottom_sheet
   page_transition: ^2.0.9
+  palette_generator: ^0.3.3+2
   path: ^1.8.2
   path_provider: ^2.0.12
   rxdart: ^0.27.7

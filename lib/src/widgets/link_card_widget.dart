@@ -461,7 +461,10 @@ class _LinkWidgetState extends State<LinkWidget> {
           Hero(
             transitionOnUserGestures: true,
             tag: random,
-            child: GalleryWidget(redditMediaList: redditMediaList),
+            child: GalleryWidget(
+              redditMediaList: redditMediaList,
+              imageProvider: Image.network('${widget.item?.data?.getPreviewImage?.url}').image,
+            ),
           ),
         );
       }
@@ -482,7 +485,10 @@ class _LinkWidgetState extends State<LinkWidget> {
                 Hero(
                   transitionOnUserGestures: true,
                   tag: random,
-                  child: GalleryWidget(redditMediaList: redditMediaList),
+                  child: GalleryWidget(
+                    redditMediaList: redditMediaList,
+                    imageProvider: Image.network('${widget.item?.data?.getPreviewImage?.url}').image,
+                  ),
                 ),
               );
             },

@@ -1,6 +1,7 @@
 import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:palette_generator/palette_generator.dart';
 import 'package:reddit_app/src/helpers/enums.dart';
 import 'package:reddit_app/src/helpers/general.dart';
 import 'package:reddit_app/src/models/listing_response_model.dart';
@@ -11,14 +12,47 @@ import 'package:rxdart/rxdart.dart';
 import 'package:video_player/video_player.dart';
 
 class GalleryWidget extends StatefulWidget {
+  final ImageProvider? imageProvider;
   final List<RedditMedia> redditMediaList;
-  const GalleryWidget({this.redditMediaList = const [], super.key});
+  const GalleryWidget({this.redditMediaList = const [], this.imageProvider, super.key});
 
   @override
   State<GalleryWidget> createState() => _GalleryWidgetState();
 }
 
 class _GalleryWidgetState extends State<GalleryWidget> {
+  bool loading = true;
+  Color backgroundColor = Colors.transparent;
+
+  /// Calculate dominant color from ImageProvider
+  Future<Color> getImagePalette({ImageProvider? imageProvider}) async {
+    if (imageProvider != null) {
+      final PaletteGenerator paletteGenerator = await PaletteGenerator.fromImageProvider(imageProvider);
+      return paletteGenerator.dominantColor?.color ?? Colors.transparent;
+    }
+    return Colors.transparent;
+  }
+
+  @override
+  void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final data = await getImagePalette(imageProvider: widget.imageProvider);
+
+      setState(() {
+        backgroundColor = data;
+        loading = false;
+      });
+    });
+    super.initState();
+  }
+
+  @override
+  void setState(VoidCallback fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
+
   final photoScaleController = PhotoViewScaleStateController();
   final PageController controller = PageController();
 
@@ -44,6 +78,13 @@ class _GalleryWidgetState extends State<GalleryWidget> {
 
   @override
   Widget build(BuildContext context) {
+    if (loading == true) {
+      return const Scaffold(
+        body: Center(
+          child: RefreshProgressIndicator(),
+        ),
+      );
+    }
     return DismissiblePage(
       onDismissed: () {
         Navigator.of(context).pop();
@@ -51,14 +92,15 @@ class _GalleryWidgetState extends State<GalleryWidget> {
       minScale: 1,
       startingOpacity: 1,
       maxTransformValue: 1,
+      maxRadius: 0,
+      minRadius: 0,
       direction: DismissiblePageDismissDirection.vertical,
       child: Scaffold(
-        backgroundColor: Colors.transparent,
         body: Stack(
           fit: StackFit.expand,
           children: [
             PhotoViewGallery.builder(
-              backgroundDecoration: const BoxDecoration(color: Colors.transparent),
+              backgroundDecoration: BoxDecoration(color: backgroundColor.withAlpha(50)),
               itemCount: widget.redditMediaList.length,
               onPageChanged: onPageChanged,
               builder: (BuildContext context, int index) {
