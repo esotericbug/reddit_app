@@ -1,5 +1,6 @@
 import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:reddit_app/src/helpers/enums.dart';
@@ -23,26 +24,30 @@ class GalleryWidget extends StatefulWidget {
 class _GalleryWidgetState extends State<GalleryWidget> {
   bool loading = true;
   Color backgroundColor = Colors.transparent;
+  SystemUiOverlayStyle? currentStyle;
 
   /// Calculate dominant color from ImageProvider
   Future<Color> getImagePalette({ImageProvider? imageProvider}) async {
     if (imageProvider != null) {
       final PaletteGenerator paletteGenerator = await PaletteGenerator.fromImageProvider(imageProvider);
       return paletteGenerator.dominantColor?.color ?? Colors.transparent;
+    } else {
+      return Colors.transparent;
     }
-    return Colors.transparent;
   }
 
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final data = await getImagePalette(imageProvider: widget.imageProvider);
-
       setState(() {
         backgroundColor = data;
         loading = false;
+        // ignore: invalid_use_of_visible_for_testing_member
+        currentStyle = SystemChrome.latestStyle;
       });
     });
+
     super.initState();
   }
 
@@ -59,6 +64,10 @@ class _GalleryWidgetState extends State<GalleryWidget> {
   final BehaviorSubject<int> indexController = BehaviorSubject<int>.seeded(0);
 
   void onPageChanged(int index) => indexController.add(index);
+
+  revertColor() {
+    SystemChrome.setSystemUIOverlayStyle(currentStyle!);
+  }
 
   PhotoViewGalleryPageOptions photoViewCustomChild(Widget child, {Widget? secondChild}) =>
       PhotoViewGalleryPageOptions.customChild(
@@ -95,82 +104,92 @@ class _GalleryWidgetState extends State<GalleryWidget> {
       maxRadius: 0,
       minRadius: 0,
       direction: DismissiblePageDismissDirection.vertical,
-      child: Scaffold(
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            PhotoViewGallery.builder(
-              backgroundDecoration: BoxDecoration(color: backgroundColor.withAlpha(50)),
-              itemCount: widget.redditMediaList.length,
-              onPageChanged: onPageChanged,
-              builder: (BuildContext context, int index) {
-                final media = widget.redditMediaList[index];
+      child: WillPopScope(
+        onWillPop: () async {
+          revertColor();
+          return true;
+        },
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: AnnotatedRegion<SystemUiOverlayStyle>(
+            value: currentStyle!.copyWith(systemNavigationBarColor: backgroundColor.withAlpha(128)),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                PhotoViewGallery.builder(
+                  backgroundDecoration: BoxDecoration(color: backgroundColor.withAlpha(128)),
+                  itemCount: widget.redditMediaList.length,
+                  onPageChanged: onPageChanged,
+                  builder: (BuildContext context, int index) {
+                    final media = widget.redditMediaList[index];
 
-                if (media.type == MediaType.image && media.url != null) {
-                  return photoViewCustomChild(
-                    ImageWithLoader(
-                      media.url,
-                      width: media.width,
-                      height: media.height,
-                      withCacheHeight: false,
-                    ),
-                  );
-                } else if ((media.type == MediaType.video || media.type == MediaType.gif) && media.url != null) {
-                  final controller = VideoPlayerController.network(
-                    media.url.toString(),
-                    videoPlayerOptions: VideoPlayerOptions(
-                      allowBackgroundPlayback: true,
-                      mixWithOthers: true,
-                    ),
-                  );
-                  return photoViewCustomChild(
-                    VideoPlayerWidget(
-                      controller: controller,
-                      url: media.url.toString(),
-                    ),
-                    secondChild: VideoControls(controller),
-                  );
-                } else {
-                  return photoViewCustomChild(
-                    InAppWebView(
-                      initialUrlRequest: URLRequest(url: Uri.parse('${media.url}')),
-                    ),
-                  );
-                }
-              },
-            ),
-            if (widget.redditMediaList.length > 1)
-              Positioned(
-                top: 5,
-                right: 5,
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 10),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.white24),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 10),
-                      child: StreamBuilder<int>(
-                        stream: indexController.stream,
-                        builder: (context, snapshot) {
-                          return Text(
-                            "${snapshot.data != null ? snapshot.data! + 1 : 0} / ${widget.redditMediaList.length}",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12.0,
-                              decoration: null,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
+                    if (media.type == MediaType.image && media.url != null) {
+                      return photoViewCustomChild(
+                        ImageWithLoader(
+                          media.url,
+                          width: media.width,
+                          height: media.height,
+                          withCacheHeight: false,
+                        ),
+                      );
+                    } else if ((media.type == MediaType.video || media.type == MediaType.gif) && media.url != null) {
+                      final controller = VideoPlayerController.network(
+                        media.url.toString(),
+                        videoPlayerOptions: VideoPlayerOptions(
+                          allowBackgroundPlayback: true,
+                          mixWithOthers: true,
+                        ),
+                      );
+                      return photoViewCustomChild(
+                        VideoPlayerWidget(
+                          controller: controller,
+                          url: media.url.toString(),
+                        ),
+                        secondChild: VideoControls(controller),
+                      );
+                    } else {
+                      return photoViewCustomChild(
+                        InAppWebView(
+                          initialUrlRequest: URLRequest(url: Uri.parse('${media.url}')),
+                        ),
+                      );
+                    }
+                  },
                 ),
-              )
-          ],
+                if (widget.redditMediaList.length > 1)
+                  Positioned(
+                    top: 5,
+                    right: 5,
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 10),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 10),
+                          child: StreamBuilder<int>(
+                            stream: indexController.stream,
+                            builder: (context, snapshot) {
+                              return Text(
+                                "${snapshot.data != null ? snapshot.data! + 1 : 0} / ${widget.redditMediaList.length}",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12.0,
+                                  decoration: null,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+              ],
+            ),
+          ),
         ),
       ),
     );

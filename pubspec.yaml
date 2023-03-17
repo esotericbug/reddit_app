@@ -13,7 +13,7 @@ dependencies:
   bloc: ^8.1.1
   bloc_concurrency: ^0.2.1
   collection: ^1.16.0
-  dio: ^5.0.1
+  dio: ^5.0.2
   dismissible_page: ^1.0.1
   dynamic_color: ^1.6.2
   equatable: ^2.0.5
@@ -42,7 +42,7 @@ dependencies:
   path_provider: ^2.0.12
   rxdart: ^0.27.7
   url_launcher: ^6.1.10
-  video_player: ^2.5.3
+  video_player: ^2.6.0
 
 dev_dependencies:
   flutter_test:
