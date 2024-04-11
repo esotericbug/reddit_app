@@ -13,7 +13,7 @@
 
 ## About The Project
 
-This is just a fun project created by me to make a personal reddit app. It has gallery functionality, videp playback, nested comments. 
+This is just a fun project created by me to make a personal reddit app. It has gallery functionality, video playback, nested comments. 
 
 ## Built With
 
